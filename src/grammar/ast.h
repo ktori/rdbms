@@ -1,9 +1,20 @@
-struct name_ast_node_s
+typedef struct string_s
+{
+	char *buffer;
+	unsigned count;
+	unsigned size;
+} *string_t;
+
+string_t string_create();
+string_t string_append(string_t string, char c);
+
+typedef struct name_ast_node_s
 {
   char *name;
-};
+} *ast_name_node_t;
 
-struct name_ast_node_s *ast_name(const char *name);
+ast_name_node_t ast_name(const char *name);
+ast_name_node_t ast_name_from_string(string_t string);
 
 struct name_list_ast_node_s
 {
@@ -29,4 +40,26 @@ struct select_ast_node_s
 
 struct select_ast_node_s *ast_select(struct name_list_ast_node_s *columns, struct from_ast_node_s *from);
 
-void select_print(struct select_ast_node_s *select);
+typedef struct ast_statement_s
+{
+	union
+	{
+		struct select_ast_node_s *select;
+	} body;
+	enum {
+		AST_SELECT
+	} type;
+} *ast_statement_t;
+
+ast_statement_t ast_statement_select(struct select_ast_node_s *select);
+
+typedef struct ast_statements_s
+{
+	ast_statement_t *array;
+	unsigned count;
+	unsigned size;
+} *ast_statements_t;
+
+ast_statements_t ast_statements_add(ast_statements_t array, ast_statement_t statement);
+
+void ast_print(ast_statement_t statement);
