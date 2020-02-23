@@ -113,7 +113,7 @@ select_for_each_callback(unsigned id, record_t record, struct select_for_each_ca
 }
 
 static int
-execute_select(select_ast_node_t select, FILE *sockf)
+execute_select(ast_select_node_t select, FILE *sockf)
 {
 	short from_rel_id;
 	unsigned *attr_ids = calloc(select->columns->count, sizeof(unsigned));
@@ -149,13 +149,21 @@ execute_select(select_ast_node_t select, FILE *sockf)
 	return EXIT_SUCCESS;
 }
 
+static int
+execute_create_table(ast_create_table_node_t ast, FILE *sockf)
+{
+	return 0;
+}
+
 int
-execute(ast_statement_t statement, FILE *sockf)
+execute(ast_statement_node_t statement, FILE *sockf)
 {
 	switch (statement->type)
 	{
 		case AST_SELECT:
 			return execute_select(statement->body.select, sockf);
+		case AST_CREATE_TABLE:
+			return execute_create_table(statement->body.create_table, sockf);
 	}
 
 	fprintf(stderr, "unknown statement type: %d\n", statement->type);

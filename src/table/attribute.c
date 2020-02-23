@@ -7,6 +7,7 @@
 #include "relation.h"
 #include "lib/strdup.h"
 #include "record.h"
+#include "domain_enum.h"
 
 #include <malloc.h>
 #include <string.h>

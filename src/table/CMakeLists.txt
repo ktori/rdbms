@@ -7,4 +7,5 @@ target_sources(${PROJECT_NAME} PRIVATE
         relation.h
         record.c
         record.h
+        domain_enum.h
         )

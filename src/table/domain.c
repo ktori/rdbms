@@ -3,6 +3,7 @@
 */
 
 #include <storage/storage.h>
+#include "domain_enum.h"
 #include "domain.h"
 #include "relation.h"
 

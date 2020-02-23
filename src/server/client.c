@@ -9,7 +9,7 @@
 #include "../query/runner.h"
 
 static void
-parse_callback(ast_statement_t statement, FILE *sockf)
+parse_callback(ast_statement_node_t statement, FILE *sockf)
 {
 	ast_print(statement);
 	execute(statement, sockf);

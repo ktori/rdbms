@@ -1,5 +1,7 @@
 #pragma once
 
+#include <table/domain_enum.h>
+
 typedef struct string_s
 {
 	char *buffer;
@@ -41,35 +43,68 @@ typedef struct select_ast_node_s
 {
   struct name_list_ast_node_s *columns;
   struct from_ast_node_s *from;
-} *select_ast_node_t;
+} *ast_select_node_t;
 
-select_ast_node_t ast_select(ast_name_list_node_t columns, ast_from_node_t from);
-void ast_select_free(select_ast_node_t node);
+ast_select_node_t ast_select(ast_name_list_node_t columns, ast_from_node_t from);
+void ast_select_free(ast_select_node_t node);
+
+
+typedef struct ast_column_def_s
+{
+	ast_name_node_t name;
+	enum attribute_domain domain;
+	int nullable;
+} *ast_column_def_node_t;
+
+ast_column_def_node_t ast_column_def(ast_name_node_t name, enum attribute_domain domain, int nullable);
+void ast_column_def_free(ast_column_def_node_t node);
+
+typedef struct ast_column_defs_s
+{
+	ast_column_def_node_t *array;
+	unsigned count;
+	unsigned size;
+} *ast_column_defs_node_t;
+
+ast_column_defs_node_t ast_add_column_def(ast_column_defs_node_t defs, ast_column_def_node_t def);
+void ast_column_defs_free(ast_column_defs_node_t node);
+
+typedef struct ast_create_table_s
+{
+	ast_name_node_t name;
+	ast_column_defs_node_t columns;
+} *ast_create_table_node_t;
+
+ast_create_table_node_t ast_create_table(ast_name_node_t name, ast_column_defs_node_t defs);
+void ast_create_table_free(ast_create_table_node_t node);
 
 typedef struct ast_statement_s
 {
 	union
 	{
-		select_ast_node_t select;
+		ast_select_node_t select;
+		ast_create_table_node_t create_table;
 	} body;
 	enum {
-		AST_SELECT
+		AST_SELECT,
+		AST_CREATE_TABLE
 	} type;
-} *ast_statement_t;
+} *ast_statement_node_t;
 
-ast_statement_t ast_statement_select(select_ast_node_t select);
-void ast_statement_free(ast_statement_t node);
+ast_statement_node_t ast_statement_select(ast_select_node_t select);
+ast_statement_node_t ast_statement_create_table(ast_create_table_node_t create_table);
+void ast_statement_free(ast_statement_node_t node);
 
 typedef struct ast_statements_s
 {
-	ast_statement_t *array;
+	ast_statement_node_t *array;
 	unsigned count;
 	unsigned size;
 } *ast_statements_t;
 
-ast_statements_t ast_statements_add(ast_statements_t array, ast_statement_t statement);
+ast_statements_t ast_statements_add(ast_statements_t array, ast_statement_node_t statement);
 void ast_statements_free(ast_statements_t node);
 
-void ast_print(ast_statement_t statement);
+void ast_print(ast_statement_node_t statement);
 
-typedef void(*ast_callback_t)(ast_statement_t statement, void *user);
+typedef void(*ast_callback_t)(ast_statement_node_t statement, void *user);
