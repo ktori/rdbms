@@ -34,19 +34,19 @@ struct from_ast_node_s
 
 struct from_ast_node_s *ast_from(struct name_ast_node_s *name_node);
 
-struct select_ast_node_s
+typedef struct select_ast_node_s
 {
   struct name_list_ast_node_s *columns;
   struct from_ast_node_s *from;
-};
+} *select_ast_node_t;
 
-struct select_ast_node_s *ast_select(struct name_list_ast_node_s *columns, struct from_ast_node_s *from);
+select_ast_node_t ast_select(struct name_list_ast_node_s *columns, struct from_ast_node_s *from);
 
 typedef struct ast_statement_s
 {
 	union
 	{
-		struct select_ast_node_s *select;
+		select_ast_node_t select;
 	} body;
 	enum {
 		AST_SELECT

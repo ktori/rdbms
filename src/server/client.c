@@ -6,11 +6,13 @@
 #include "parser.h"
 #include "lexer.h"
 #include "../grammar/ast.h"
+#include "../query/runner.h"
 
 static void
-parse_callback(ast_statement_t statement, int *fd)
+parse_callback(ast_statement_t statement, FILE *sockf)
 {
 	ast_print(statement);
+	execute(statement, sockf);
 }
 
 int
@@ -19,7 +21,8 @@ client_accept(int fd)
 	unsigned c = 0;
 	yyscan_t scanner;
 	YY_BUFFER_STATE buf;
-	FILE *f = fdopen(fd, "r");
+	FILE *f = fdopen(fd, "r+b");
+	setvbuf(f, NULL, _IONBF, 0);
 	if (f == NULL)
 	{
 		perror("fdopen()");
@@ -33,9 +36,8 @@ client_accept(int fd)
 	}
 	yylex_init_extra(&c, scanner);
 	buf = yy_create_buffer(f, YY_BUF_SIZE, scanner);
-	buf->yy_is_interactive = 1;
 	yy_switch_to_buffer(buf, scanner);
-	if (yyparse(scanner, (ast_callback_t) parse_callback, &fd) != EXIT_SUCCESS)
+	if (yyparse(scanner, (ast_callback_t) parse_callback, f) != EXIT_SUCCESS)
 	{
 		fprintf(stderr, "parse error\n");
 	}

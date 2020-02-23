@@ -5,4 +5,6 @@ target_sources(${PROJECT_NAME} PRIVATE
         attribute.h
         relation.c
         relation.h
+        record.c
+        record.h
         )

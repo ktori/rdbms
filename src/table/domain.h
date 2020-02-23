@@ -4,7 +4,22 @@
 
 #pragma once
 
+enum attribute_domain
+{
+	AD_BOOLEAN = 1,
+	AD_CHAR,
+	AD_VARCHAR,
+	AD_BYTE,
+	AD_SMALL_INTEGER,
+	AD_INTEGER,
+	AD_REAL,
+	AD_BLOB
+};
+
 struct domain_s
 {
 	char *name;
 };
+
+int
+domain_init();

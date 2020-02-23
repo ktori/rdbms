@@ -23,5 +23,7 @@
 "("			{ return BR_OPEN; }
 ","			{ return COMMA; }
 ")"			{ return BR_CLOSE; }
+"\0"        { yyterminate(); }
+<<EOF>>     { yyterminate(); }
 .			{ printf("unexpected %c\n", *yytext); }
 %%
