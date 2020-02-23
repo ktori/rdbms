@@ -1,8 +1,11 @@
-#include <stdio.h>
+#include "server/server.h"
 
 int
 main()
 {
-	printf("Hello, World!\n");
+	struct server_s server = {0};
+	server_start(&server);
+	server_listen(&server);
+	server_stop(&server);
 	return 0;
 }

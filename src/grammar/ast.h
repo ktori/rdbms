@@ -1,3 +1,5 @@
+#pragma once
+
 typedef struct string_s
 {
 	char *buffer;
@@ -63,3 +65,5 @@ typedef struct ast_statements_s
 ast_statements_t ast_statements_add(ast_statements_t array, ast_statement_t statement);
 
 void ast_print(ast_statement_t statement);
+
+typedef void(*ast_callback_t)(ast_statement_t statement, void *user);

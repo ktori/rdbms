@@ -1,11 +1,26 @@
-%{
+%code requires {
 #include "ast.h"
+#ifndef YY_TYPEDEF_YY_SCANNER_T
+#define YY_TYPEDEF_YY_SCANNER_T
+typedef void* yyscan_t;
+#endif
+}
 
+%code {
+#include "lexer.h"
 #include <stdio.h>
+int yyerror(yyscan_t scanner, ast_callback_t callback, void *user, char *s)
+{
+  fprintf(stderr, "error: %s\n", s);
+  return 0;
+}
+}
 
-int yylex();
-int yyerror(char *s);
-%}
+%define api.pure full
+%lex-param   { yyscan_t scanner }
+%parse-param { yyscan_t scanner }
+%parse-param { ast_callback_t callback }
+%parse-param { void *user }
 
 %union
 {
@@ -17,6 +32,8 @@ int yyerror(char *s);
   ast_statement_t statement;
   ast_statements_t statements;
 }
+
+%initial-action { yyset_extra(0, scanner); }
 
 %token SELECT
 %token FROM
@@ -38,8 +55,8 @@ int yyerror(char *s);
 
 %%
 statements
-	: statement SEMICOLON			{ $$ = ast_statements_add(NULL, $1); ast_print($1); };
-	| statements statement			{ $$ = ast_statements_add($1, $2); ast_print($2); };
+	: statement SEMICOLON			{ $$ = ast_statements_add(NULL, $1); callback($1, user); };
+	| statements statement SEMICOLON	{ $$ = ast_statements_add($1, $2); callback($2, user); };
 	;
 	
 statement
@@ -64,8 +81,3 @@ select_items
   | select_item				{ $$ = ast_name_list_add(NULL, yylval.name); };
   | select_items COMMA select_item	{ $$ = ast_name_list_add($1, $3); };
 %%
-
-int yyerror(char *s)
-{
-  fprintf(stderr, "error: %s\n", s);
-}

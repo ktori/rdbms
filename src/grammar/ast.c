@@ -7,7 +7,8 @@
 struct name_ast_node_s *ast_name(const char *name)
 {
   struct name_ast_node_s *result = calloc(1, sizeof(struct name_ast_node_s));
-  result->name = strdup(name);
+  result->name = malloc(strlen(name) + 1);
+  strcpy(result->name, name);
   return result;
 }
 

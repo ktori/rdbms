@@ -1,0 +1,1 @@
+target_sources(${PROJECT_NAME} PRIVATE server.c server.h client.c client.h)
