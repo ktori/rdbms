@@ -6,6 +6,7 @@
 #include "domain.h"
 #include "relation.h"
 
+#include <string.h>
 #include "lib/strdup.h"
 #include "record.h"
 
@@ -15,10 +16,10 @@ domain_init_type(record_def_t record_def, const char *name, enum attribute_domai
 	record_t record = record_create(record_def);
 	struct record_value_s value = {0};
 	int status;
-	value.data = strdup("BOOL");
-	value.data_size = sizeof("BOOL");
+	value.data = strdup(name);
+	value.data_size = strlen(name) + 1;
 	record->values[0] = value;
-	status = store_insert_in_place(SYS_REL_DOMAIN, AD_BOOLEAN, record);
+	status = store_insert_in_place(SYS_REL_DOMAIN, domain, record);
 	record_free(&record);
 	return status;
 }
