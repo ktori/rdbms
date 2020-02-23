@@ -77,3 +77,17 @@ rel_get(short rel)
 
 	return NULL;
 }
+
+void
+rel_shutdown()
+{
+	relation_t i = relations, end = relations + relations_count;
+
+	for (; i < end; ++i)
+	{
+		record_def_free(&i->record_def);
+		free(i->name);
+	}
+
+	free(relations);
+}

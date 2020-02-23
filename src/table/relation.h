@@ -35,3 +35,6 @@ rel_get(short rel);
 
 relation_t
 rel_create(char *name);
+
+void
+rel_shutdown();

@@ -128,6 +128,7 @@ execute_select(select_ast_node_t select, FILE *sockf)
 	{
 		fprintf(sockf, "not found\n");
 		fclose(sockf);
+		free(attr_ids);
 		return 1;
 	}
 
@@ -142,6 +143,8 @@ execute_select(select_ast_node_t select, FILE *sockf)
 	select_data.sockf = sockf;
 
 	store_for_each(from_rel_id, (store_for_each_callback_t) select_for_each_callback, &select_data);
+
+	free(attr_ids);
 
 	return EXIT_SUCCESS;
 }

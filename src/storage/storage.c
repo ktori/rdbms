@@ -14,6 +14,7 @@ typedef struct store_entry_s
 {
 	unsigned id;
 	record_value_t values;
+	unsigned count;
 } *store_entry_t;
 
 typedef struct rel_store_s
@@ -127,6 +128,7 @@ store_insert_in_place(short rel, unsigned id, record_t record)
 	if (rel_store->last_id < id)
 		rel_store->last_id = id;
 	entry->values = malloc(relation->record_def->attributes_count * sizeof(struct record_value_s));
+	entry->count = relation->record_def->attributes_count;
 	for (i = 0; i < relation->record_def->attributes_count; ++i)
 	{
 		entry->values[i].data_size = record->values[i].data_size;
@@ -156,4 +158,29 @@ store_find_by_id(short rel, unsigned id, struct record_s *out)
 	}
 
 	return 1;
+}
+
+void
+store_shutdown()
+{
+	rel_store_t *i = store.relations, *end = i + store.count;
+	store_entry_t *j, *e_end;
+	record_value_t k, k_end;
+
+	for (; i < end; ++i)
+	{
+		for ((j = (*i)->array), (e_end = (*i)->array + (*i)->count); j < e_end; ++j)
+		{
+			for ((k = (*j)->values), (k_end = k + (*j)->count); k < k_end; ++k)
+			{
+				free(k->data);
+			}
+			free((*j)->values);
+			free(*j);
+		}
+		free((*i)->array);
+		free(*i);
+	}
+
+	free(store.relations);
 }

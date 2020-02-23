@@ -30,11 +30,9 @@ client_accept(int fd)
 	if (yylex_init(&scanner) != EXIT_SUCCESS)
 	{
 		fprintf(stderr, "yylex_init()\n");
-		fclose(f);
 		return EXIT_FAILURE;
 	}
 	c.socket_fd = fd;
-	yylex_init_extra(&c, scanner);
 	yyset_extra(&c, scanner);
 	if (yyparse(scanner, (ast_callback_t) parse_callback, f) != EXIT_SUCCESS)
 	{

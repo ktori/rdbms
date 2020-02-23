@@ -22,3 +22,6 @@ store_for_each(short rel, store_for_each_callback_t callback, void *user);
 
 int
 store_find_by_id(short rel, unsigned id, struct record_s *out);
+
+void
+store_shutdown();

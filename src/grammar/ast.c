@@ -148,3 +148,61 @@ ast_name_from_string(string_t string)
 	result->name = string->buffer;
 	return result;
 }
+
+void
+ast_name_free(ast_name_node_t node)
+{
+	free(node->name);
+	free(node);
+}
+
+void
+ast_name_list_free(ast_name_list_node_t node)
+{
+	unsigned i;
+
+	for (i = 0; i < node->count; ++i)
+		ast_name_free(node->array[i]);
+
+	free(node->array);
+	free(node);
+}
+
+void
+ast_from_free(ast_from_node_t node)
+{
+	ast_name_free(node->name);
+	free(node);
+}
+
+void
+ast_select_free(select_ast_node_t node)
+{
+	ast_name_list_free(node->columns);
+	ast_from_free(node->from);
+	free(node);
+}
+
+void
+ast_statement_free(ast_statement_t node)
+{
+	switch (node->type)
+	{
+		case AST_SELECT:
+			ast_select_free(node->body.select);
+			break;
+	}
+	free(node);
+}
+
+void
+ast_statements_free(ast_statements_t node)
+{
+	unsigned i;
+
+	for (i = 0; i < node->count; ++i)
+		ast_statement_free(node->array[i]);
+
+	free(node->array);
+	free(node);
+}

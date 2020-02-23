@@ -55,6 +55,13 @@ int yyerror(yyscan_t scanner, ast_callback_t callback, void *user, char *s)
 %type <name> select_item
 %type <from> from_item
 
+%destructor { ast_name_free($<name>$); }		ID
+%destructor { ast_name_free($$); }		<name>
+%destructor { ast_name_list_free($$); }		<list>
+%destructor { ast_from_free($$); }		<from>
+%destructor { ast_select_free($$); }		<select>
+%destructor { ast_statement_free($$); }		<statement>
+%destructor { ast_statements_free($$); }	<statements>
 
 %%
 statements
@@ -81,6 +88,6 @@ from_item
 
 select_items
   : BR_OPEN select_items BR_CLOSE	{ $$ = $2; };
-  | select_item				{ $$ = ast_name_list_add(NULL, yylval.name); };
+  | select_item				{ $$ = ast_name_list_add(NULL, $1); };
   | select_items COMMA select_item	{ $$ = ast_name_list_add($1, $3); };
 %%

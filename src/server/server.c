@@ -83,6 +83,7 @@ server_start(server_t server)
 int
 server_stop(server_t server)
 {
+	server->running = 0;
 	shutdown(server->fd, SHUT_RDWR);
 
 	return EXIT_SUCCESS;
@@ -92,7 +93,7 @@ int
 server_listen(server_t server)
 {
 	struct sockaddr client_addr;
-	unsigned addr_size;
+	unsigned addr_size = sizeof(struct sockaddr);
 	int client;
 
 	while (server->running)
