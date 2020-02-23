@@ -14,9 +14,10 @@ typedef struct yy_extra_s
 %code {
 #include "lexer.h"
 #include <stdio.h>
+
 int yyerror(yyscan_t scanner, ast_callback_t callback, void *user, char *s)
 {
-  fprintf(stderr, "error: %s\n", s);
+  fprintf(stderr, "error: %s (%s)\n", s, yyget_text(scanner));
   return 0;
 }
 }
@@ -30,6 +31,7 @@ int yyerror(yyscan_t scanner, ast_callback_t callback, void *user, char *s)
 %union
 {
   int intval;
+  ast_literal_t literal;
   string_t string;
   ast_name_node_t name;
   ast_name_list_node_t list;
@@ -41,6 +43,7 @@ int yyerror(yyscan_t scanner, ast_callback_t callback, void *user, char *s)
   ast_column_def_node_t column_def;
   ast_column_defs_node_t column_defs;
   ast_create_table_node_t create_table;
+  ast_insert_tuple_node_t insert_tuple;
 }
 
 %token SELECT
@@ -51,9 +54,15 @@ int yyerror(yyscan_t scanner, ast_callback_t callback, void *user, char *s)
 %token EOL
 %token SEMICOLON
 %token STRING
+%token STRING_VALUE
+%token <intval> INT_VALUE
 
 %token CREATE
 %token TABLE
+
+%token INSERT
+%token INTO
+%token VALUES
 
 %token NOT
 %token NULL_T
@@ -66,6 +75,9 @@ int yyerror(yyscan_t scanner, ast_callback_t callback, void *user, char *s)
 %token VARCHAR
 %token BLOB
 %token REAL
+
+%token TRUE
+%token FALSE
 
 %type <name> name
 %type <statements> statements
@@ -82,6 +94,10 @@ int yyerror(yyscan_t scanner, ast_callback_t callback, void *user, char *s)
 %type <intval> opt_nullable
 %type <statement> create_stmt
 %type <create_table> create_table_stmt
+%type <literal> value
+%type <insert_tuple> insert_tuple
+%type <insert_tuple> value_list
+%type <statement> insert_stmt
 
 %destructor { ast_name_free($<name>$); }		ID
 %destructor { ast_name_free($$); }		<name>
@@ -103,15 +119,38 @@ statements
 statement
 	: select_stmt				{ $$ = ast_statement_select($1); };
 	| create_stmt				{ $$ = $1; };
+	| insert_stmt               { $$ = $1; };
 	;
 
 select_stmt
 	: SELECT select_items FROM from_item	{ $$ = ast_select($2, $4); };
+	;
 
 create_stmt
 	: create_table_stmt			{ $$ = ast_statement_create_table($1); };
 	;
-	
+
+insert_stmt
+    : INSERT INTO name select_items VALUES insert_tuple     { $$ = ast_statement_insert($3, $4, $6); };
+    ;
+
+insert_tuple
+    : BR_OPEN value_list BR_CLOSE   { $$ = $2; };
+    ;
+
+value_list
+    : value                     { $$ = ast_insert_tuple_add(NULL, $1); };
+    | value_list COMMA value    { $$ = ast_insert_tuple_add($1, $3); };
+    ;
+
+value
+    : NULL_T        { $$ = ast_literal_null(); };
+    | TRUE          { $$ = ast_literal_bool(1); };
+    | FALSE         { $$ = ast_literal_bool(0); };
+    | STRING_VALUE  { $$ = ast_literal_string(yylval.string); };
+    | INT_VALUE     { $$ = ast_literal_int(yylval.intval); };
+    ;
+
 create_table_stmt
 	: CREATE TABLE name table_def		{ $$ = ast_create_table($3, $4); };
 	;
@@ -139,8 +178,8 @@ column_type
 	;
 	
 opt_nullable
-	:					{ $$ = 0; };
-	| NOT NULL_T				{ $$ = 1; };
+	:					{ $$ = 1; };
+	| NOT NULL_T				{ $$ = 0; };
 	;
 
 name

@@ -11,6 +11,7 @@
 %option extra-type="yy_extra_t"
 
 %x QUOTED_STRING
+%x QUOTED_STRING_VALUE
 
 %%
 
@@ -18,6 +19,9 @@ SELECT			{ return SELECT; }
 FROM			{ return FROM; }
 CREATE			{ return CREATE; }
 TABLE			{ return TABLE; }
+INSERT          { return INSERT; }
+INTO            { return INTO; }
+VALUES          { return VALUES; }
 
 BLOB			{ return BLOB; }
 BOOL(EAN)?		{ return BOOLEAN; }
@@ -28,6 +32,9 @@ SMALLINT		{ return SMALLINT; }
 INT(EGER)?		{ return INTEGER; }
 REAL			{ return REAL; }
 
+TRUE            { return TRUE; }
+FALSE           { return FALSE; }
+
 NOT			{ return NOT; }
 NULL			{ return NULL_T; }
 
@@ -35,6 +42,10 @@ NULL			{ return NULL_T; }
 \"			{ yyextra->string_length = 1; yylval->string = string_create(); yymore(); BEGIN(QUOTED_STRING); }
 <QUOTED_STRING>\"	{ string_append(yylval->string, 0); BEGIN(INITIAL); return STRING; }
 <QUOTED_STRING>.	{ string_append(yylval->string, yytext[yyextra->string_length++]); yymore(); }
+\'          { yyextra->string_length = 1; yylval->string = string_create(); yymore(); BEGIN(QUOTED_STRING_VALUE); }
+<QUOTED_STRING_VALUE>\'     { string_append(yylval->string, 0); BEGIN(INITIAL); return STRING_VALUE; }
+<QUOTED_STRING_VALUE>.      { string_append(yylval->string, yytext[yyextra->string_length++]); yymore(); }
+"-"?[1-9][0-9]*      { yylval->intval = atoi(yytext); return INT_VALUE; }
 ";"			{ return SEMICOLON; }
 [a-z_0-9]+		{ yylval->name = ast_name(yytext); return ID; }
 "("			{ return BR_OPEN; }

@@ -94,6 +94,7 @@ struct record_value_s
 record_value_str(const char *str)
 {
 	struct record_value_s result = {0};
+	result.null = 0;
 	result.data = strdup(str);
 	result.data_size = strlen(str) + 1;
 	return result;
@@ -103,6 +104,7 @@ struct record_value_s
 record_value_from(void *data, size_t size)
 {
 	struct record_value_s result = {0};
+	result.null = 0;
 	result.data = malloc(size);
 	memcpy(result.data, data, size);
 	result.data_size = size;

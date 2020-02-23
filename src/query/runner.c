@@ -80,28 +80,31 @@ select_for_each_callback(unsigned id, record_t record, struct select_for_each_ca
 			}
 			else
 			{
-				switch (*(enum attribute_domain *) attr_rec.values[2].data)
-				{
-					case AD_VARCHAR:
-						fprintf(user->sockf, "'%.*s'", (int) record->values[ai].data_size - 1,
-								(char *) record->values[ai].data);
-						break;
-					case AD_INTEGER:
-						fprintf(user->sockf, "%d", *(int *) record->values[ai].data);
-						break;
-					case AD_BOOLEAN:
-						if (*(char *) record->values[ai].data)
-							fprintf(user->sockf, "true");
-						else
-							fprintf(user->sockf, "false");
-						break;
-					default:
-						for (j = 0; j < record->values[ai].data_size; ++j)
-						{
-							fprintf(user->sockf, "%02x", ((unsigned char *) record->values[ai].data)[j]);
-						}
-						break;
-				}
+				if (record->values[ai].null)
+					fprintf(user->sockf, "<null>");
+				else
+					switch (*(enum attribute_domain *) attr_rec.values[2].data)
+					{
+						case AD_VARCHAR:
+							fprintf(user->sockf, "'%.*s'", (int) record->values[ai].data_size - 1,
+									(char *) record->values[ai].data);
+							break;
+						case AD_INTEGER:
+							fprintf(user->sockf, "%d", *(int *) record->values[ai].data);
+							break;
+						case AD_BOOLEAN:
+							if (*(char *) record->values[ai].data)
+								fprintf(user->sockf, "true");
+							else
+								fprintf(user->sockf, "false");
+							break;
+						default:
+							for (j = 0; j < record->values[ai].data_size; ++j)
+							{
+								fprintf(user->sockf, "%02x", ((unsigned char *) record->values[ai].data)[j]);
+							}
+							break;
+					}
 			}
 		}
 		fprintf(user->sockf, "\n");
@@ -127,7 +130,6 @@ execute_select(ast_select_node_t select, FILE *sockf)
 	if (from_rel_id <= 0)
 	{
 		fprintf(sockf, "not found\n");
-		fclose(sockf);
 		free(attr_ids);
 		return 1;
 	}
@@ -180,6 +182,150 @@ execute_create_table(ast_create_table_node_t ast, FILE *sockf)
 	return 0;
 }
 
+static record_t
+record_from_tuple(record_def_t def, struct attr_find_callback_data_s *columns, ast_insert_tuple_node_t tuple, FILE *sockf)
+{
+	struct record_s attr;
+	struct record_value_s value = {0};
+	record_t result = record_create(def);
+	unsigned i, j;
+
+	for (i = 0; i < def->attributes_count; ++i)
+	{
+		for (j = 0; j < columns->list->count; ++j)
+		{
+			if (columns->out_ids[j] == def->attributes[i])
+				break;
+		}
+		store_find_by_id(SYS_REL_ATTRIBUTE, def->attributes[i], &attr);
+		if (j == columns->list->count)
+		{
+			if (*(char *)attr.values[1].data)
+				result->values[i] = record_value_null();
+			else
+			{
+				fprintf(stderr, "attribute %s is not nullable\n", (const char *)attr.values[0].data);
+				fprintf(sockf, "attribute %s is not nullable\n", (const char *)attr.values[0].data);
+				return NULL;
+			}
+		}
+		else
+		{
+			switch (* (enum attribute_domain *) attr.values[2].data)
+			{
+				case AD_BOOLEAN:
+					if (tuple->values[j].domain != AD_BOOLEAN)
+					{
+						fprintf(stderr, "unexpected domain\n");
+						fprintf(sockf, "unexpected domain\n");
+						return NULL;
+					}
+					value = record_value_from(&tuple->values[j].value.bool_val, sizeof(char));
+					break;
+				case AD_VARCHAR:
+					if (tuple->values[j].domain != AD_VARCHAR)
+					{
+						fprintf(stderr, "unexpected domain\n");
+						fprintf(sockf, "unexpected domain\n");
+						return NULL;
+					}
+					value = record_value_str(tuple->values[j].value.string_val);
+					break;
+				case AD_INTEGER:
+					if (tuple->values[j].domain != AD_INTEGER)
+					{
+						fprintf(stderr, "unexpected domain\n");
+						fprintf(sockf, "unexpected domain\n");
+						return NULL;
+					}
+					value = record_value_from(&tuple->values[j].value.int_val, sizeof(int));
+					break;
+				default:
+					fprintf(stderr, "type not supported\n");
+					fprintf(sockf, "type not supported\n");
+					return NULL;
+			}
+			result->values[i] = value;
+		}
+	}
+
+	return result;
+}
+
+static int
+execute_insert(ast_insert_node_t insert, FILE *sockf)
+{
+	unsigned i, out_id;
+	short from_rel_id;
+	relation_t rel;
+	record_t record;
+	unsigned *attr_ids = calloc(insert->columns->count, sizeof(unsigned));
+	struct attr_find_callback_data_s data;
+	printf("INSERT INTO %s (", insert->table->name);
+	for (i = 0; i < insert->columns->count; ++i)
+	{
+		printf("%s", insert->columns->array[i]->name);
+		if (i < insert->columns->count - 1)
+			printf(", ");
+	}
+	printf(") VALUES (");
+	for (i = 0; i < insert->tuple->count; ++i)
+	{
+		switch ((int) insert->tuple->values[i].domain)
+		{
+			case 0:
+				printf("NULL");
+				break;
+			case AD_VARCHAR:
+				printf("%s", insert->tuple->values[i].value.string_val);
+				break;
+			case AD_BOOLEAN:
+				if (insert->tuple->values[i].value.bool_val)
+					printf("TRUE");
+				else
+					printf("FALSE");
+				break;
+			case AD_INTEGER:
+				printf("%d", insert->tuple->values[i].value.int_val);
+				break;
+			default:
+				printf("<unknown>");
+				break;
+		}
+		if (i < insert->tuple->count - 1)
+			printf(", ");
+	}
+	printf(");\n");
+
+	from_rel_id = rel_find_by_name(insert->table->name, 0);
+
+	if (from_rel_id <= 0)
+	{
+		fprintf(sockf, "not found\n");
+		free(attr_ids);
+		return 1;
+	}
+
+	data.list = insert->columns;
+	data.out_ids = attr_ids;
+	data.from_rel = from_rel_id;
+
+	store_for_each(SYS_REL_ATTRIBUTE, (store_for_each_callback_t) attr_find_callback, &data);
+
+	rel = rel_get(from_rel_id);
+
+	record = record_from_tuple(rel->record_def, &data, insert->tuple, sockf);
+
+	if (record == NULL)
+		return 1;
+
+	store_insert(from_rel_id, &out_id, record);
+
+	fprintf(sockf, "insert = %u\n", out_id);
+
+	return 0;
+}
+
 int
 execute(ast_statement_node_t statement, FILE *sockf)
 {
@@ -189,6 +335,8 @@ execute(ast_statement_node_t statement, FILE *sockf)
 			return execute_select(statement->body.select, sockf);
 		case AST_CREATE_TABLE:
 			return execute_create_table(statement->body.create_table, sockf);
+		case AST_INSERT:
+			return execute_insert(statement->body.insert, sockf);
 	}
 
 	fprintf(stderr, "unknown statement type: %d\n", statement->type);

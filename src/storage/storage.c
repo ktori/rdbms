@@ -131,6 +131,7 @@ store_insert_in_place(short rel, unsigned id, record_t record)
 	entry->count = relation->record_def->attributes_count;
 	for (i = 0; i < relation->record_def->attributes_count; ++i)
 	{
+		entry->values[i].null = record->values[i].null;
 		entry->values[i].data_size = record->values[i].data_size;
 		entry->values[i].data = malloc(entry->values[i].data_size);
 		memcpy(entry->values[i].data, record->values[i].data, record->values[i].data_size);
