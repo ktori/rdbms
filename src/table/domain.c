@@ -25,27 +25,39 @@ domain_init_type(record_def_t record_def, const char *name, enum attribute_domai
 	return status;
 }
 
+static record_def_t domain_record_def_ptr = NULL;
+
+static record_def_t
+domain_record_def()
+{
+	if (domain_record_def_ptr)
+		return domain_record_def_ptr;
+
+	domain_record_def_ptr = record_def_create();
+	store_insert_in_place(SYS_REL_ATTRIBUTE, ATTR_SYS_DOMAIN_NAME,
+						  attribute_record_create(SYS_REL_DOMAIN, "name", AD_VARCHAR, NULL, 0, 0));
+	record_def_add_attribute(domain_record_def_ptr, ATTR_SYS_DOMAIN_NAME);
+
+	return domain_record_def_ptr;
+}
+
 int
 domain_init()
 {
-	relation_t rel = rel_alloc();
-	record_def_t record_def;
+	record_def_t def = domain_record_def();
+	relation_t rel = rel_create(SYS_REL_DOMAIN, "sys_domain", def);
 
-	record_def = record_def_create();
-	record_def_add_attribute(record_def, ATTR_SYS_DOMAIN_NAME);
+	if (rel == NULL)
+		return 1;
 
-	rel->id = SYS_REL_DOMAIN;
-	rel->name = strdup("sys_domain");
-	rel->record_def = record_def;
-
-	domain_init_type(record_def, "BOOL", AD_BOOLEAN);
-	domain_init_type(record_def, "CHAR", AD_CHAR);
-	domain_init_type(record_def, "VARCHAR", AD_VARCHAR);
-	domain_init_type(record_def, "BYTE", AD_BYTE);
-	domain_init_type(record_def, "SMALLINT", AD_SMALL_INTEGER);
-	domain_init_type(record_def, "INT", AD_INTEGER);
-	domain_init_type(record_def, "REAL", AD_REAL);
-	domain_init_type(record_def, "BLOB", AD_BLOB);
+	domain_init_type(def, "BOOL", AD_BOOLEAN);
+	domain_init_type(def, "CHAR", AD_CHAR);
+	domain_init_type(def, "VARCHAR", AD_VARCHAR);
+	domain_init_type(def, "BYTE", AD_BYTE);
+	domain_init_type(def, "SMALLINT", AD_SMALL_INTEGER);
+	domain_init_type(def, "INT", AD_INTEGER);
+	domain_init_type(def, "REAL", AD_REAL);
+	domain_init_type(def, "BLOB", AD_BLOB);
 
 	return 0;
 }

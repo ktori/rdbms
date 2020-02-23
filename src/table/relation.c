@@ -6,6 +6,9 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <storage/storage.h>
+#include <stdio.h>
+#include "lib/strdup.h"
 
 static relation_t relations = NULL;
 static unsigned relations_count = 0;
@@ -14,7 +17,7 @@ static unsigned relations_size = 0;
 short next_user_id = 1000;
 
 relation_t
-rel_alloc()
+rel_create(short fixed_id, const char *name, record_def_t record_def)
 {
 	if (relations_size == relations_count)
 	{
@@ -23,6 +26,15 @@ rel_alloc()
 	}
 
 	memset(relations + relations_count, 0, sizeof(struct relation_s));
+
+	if (fixed_id < 0)
+		relations[relations_count].id = next_user_id++;
+	else
+		relations[relations_count].id = fixed_id;
+
+	relations[relations_count].name = strdup(name);
+	relations[relations_count].record_def = record_def;
+
 	relations_count += 1;
 	return relations + relations_count - 1;
 }
@@ -39,19 +51,6 @@ rel_find_by_name(char *name, int case_sens)
 	}
 
 	return -1;
-}
-
-relation_t
-rel_create(char *name)
-{
-	relation_t result = rel_alloc();
-
-	result->id = next_user_id;
-	next_user_id += 1;
-	result->name = malloc(strlen(name) + 1);
-	strcpy(result->name, name);
-
-	return result;
 }
 
 int

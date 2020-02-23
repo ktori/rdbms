@@ -152,6 +152,8 @@ execute_select(ast_select_node_t select, FILE *sockf)
 static int
 execute_create_table(ast_create_table_node_t ast, FILE *sockf)
 {
+	printf("creating table '%s'...\n", ast->name->name);
+
 	return 0;
 }
 

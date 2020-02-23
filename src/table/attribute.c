@@ -12,6 +12,7 @@
 #include <malloc.h>
 #include <string.h>
 #include <storage/storage.h>
+#include <stdlib.h>
 
 /*
  * 	CREATE TABLE "sys_attribute"
@@ -24,216 +25,92 @@
  * 	);
  */
 
-static void
-init_attr_name(record_def_t record_def)
+static int
+sys_attribute_create(const char *name, unsigned domain, void *domain_data, unsigned domain_data_size,
+					 char nullable, unsigned sys_id);
+
+enum attr_record_value
 {
-	record_t record;
-	struct record_value_s record_value;
-	char false = 0;
+	AR_NAME,
+	AR_NULLABLE,
+	AR_DOMAIN,
+	AR_DOMAIN_DATA,
+	AR_RELATION
+};
 
-	record = record_create(record_def);
-	record_value.data = strdup("name");
-	record_value.data_size = sizeof("name");
-	record->values[0] = record_value;
-	record_value.data = malloc(sizeof(char));
-	record_value.data_size = sizeof(char);
-	*(char *)(record_value.data) = false;
-	record->values[1] = record_value;
-	record_value.data = malloc(sizeof(unsigned));
-	record_value.data_size = sizeof(unsigned);
-	*(unsigned *)(record_value.data) = AD_VARCHAR;
-	record->values[2] = record_value;
-	record_value.data = NULL;
-	record_value.data_size = 0;
-	record->values[3] = record_value;
-	record_value.data = malloc(sizeof(short));
-	record_value.data_size = sizeof(short);
-	*(short *)(record_value.data) = SYS_REL_ATTRIBUTE;
-	record->values[4] = record_value;
+static record_def_t sys_attribute_record_def_ptr = NULL;
 
-	store_insert_in_place(SYS_REL_ATTRIBUTE, ATTR_SYS_ATTRIBUTE_NAME, record);
-	record_free(&record);
-}
-
-static void
-init_attr_nullable(record_def_t record_def)
+static record_def_t
+sys_attribute_record_def()
 {
-	record_t record;
-	struct record_value_s record_value;
-	char false = 0;
+	if (sys_attribute_record_def_ptr != NULL)
+		return sys_attribute_record_def_ptr;
 
-	record = record_create(record_def);
-	record_value.data = strdup("nullable");
-	record_value.data_size = sizeof("nullable");
-	record->values[0] = record_value;
-	record_value.data = malloc(sizeof(char));
-	record_value.data_size = sizeof(char);
-	*(char *)(record_value.data) = false;
-	record->values[1] = record_value;
-	record_value.data = malloc(sizeof(unsigned));
-	record_value.data_size = sizeof(unsigned);
-	*(unsigned *)(record_value.data) = AD_BOOLEAN;
-	record->values[2] = record_value;
-	record_value.data = NULL;
-	record_value.data_size = 0;
-	record->values[3] = record_value;
-	record_value.data = malloc(sizeof(short));
-	record_value.data_size = sizeof(short);
-	*(short *)(record_value.data) = SYS_REL_ATTRIBUTE;
-	record->values[4] = record_value;
+	sys_attribute_record_def_ptr = record_def_create();
 
-	store_insert_in_place(SYS_REL_ATTRIBUTE, ATTR_SYS_ATTRIBUTE_NULLABLE, record);
-	record_free(&record);
-}
+	record_def_add_attribute(sys_attribute_record_def_ptr, ATTR_SYS_ATTRIBUTE_NAME);
+	record_def_add_attribute(sys_attribute_record_def_ptr, ATTR_SYS_ATTRIBUTE_NULLABLE);
+	record_def_add_attribute(sys_attribute_record_def_ptr, ATTR_SYS_ATTRIBUTE_DOMAIN);
+	record_def_add_attribute(sys_attribute_record_def_ptr, ATTR_SYS_ATTRIBUTE_DOMAIN_DATA);
+	record_def_add_attribute(sys_attribute_record_def_ptr, ATTR_SYS_ATTRIBUTE_RELATION);
 
-static void
-init_attr_domain(record_def_t record_def)
-{
-	record_t record;
-	struct record_value_s record_value;
-	char false = 0;
-
-	record = record_create(record_def);
-	record_value.data = strdup("domain");
-	record_value.data_size = sizeof("domain");
-	record->values[0] = record_value;
-	record_value.data = malloc(sizeof(char));
-	record_value.data_size = sizeof(char);
-	*(char *)(record_value.data) = false;
-	record->values[1] = record_value;
-	record_value.data = malloc(sizeof(unsigned));
-	record_value.data_size = sizeof(unsigned);
-	*(unsigned *)(record_value.data) = AD_INTEGER;
-	record->values[2] = record_value;
-	record_value.data = NULL;
-	record_value.data_size = 0;
-	record->values[3] = record_value;
-	record_value.data = malloc(sizeof(short));
-	record_value.data_size = sizeof(short);
-	*(short *)(record_value.data) = SYS_REL_ATTRIBUTE;
-	record->values[4] = record_value;
-
-	store_insert_in_place(SYS_REL_ATTRIBUTE, ATTR_SYS_ATTRIBUTE_DOMAIN, record);
-	record_free(&record);
-}
-
-static void
-init_attr_domain_data(record_def_t record_def)
-{
-	record_t record;
-	struct record_value_s record_value;
-	char true = 1;
-
-	record = record_create(record_def);
-	record_value.data = strdup("domain_data");
-	record_value.data_size = sizeof("domain_data");
-	record->values[0] = record_value;
-	record_value.data = malloc(sizeof(char));
-	record_value.data_size = sizeof(char);
-	*(char *)(record_value.data) = true;
-	record->values[1] = record_value;
-	record_value.data = malloc(sizeof(unsigned));
-	record_value.data_size = sizeof(unsigned);
-	*(unsigned *)(record_value.data) = AD_BLOB;
-	record->values[2] = record_value;
-	record_value.data = NULL;
-	record_value.data_size = 0;
-	record->values[3] = record_value;
-	record_value.data = malloc(sizeof(short));
-	record_value.data_size = sizeof(short);
-	*(short *)(record_value.data) = SYS_REL_ATTRIBUTE;
-	record->values[4] = record_value;
-
-	store_insert_in_place(SYS_REL_ATTRIBUTE, ATTR_SYS_ATTRIBUTE_DOMAIN_DATA, record);
-	record_free(&record);
-}
-
-static void
-init_attr_relation(record_def_t record_def)
-{
-	record_t record;
-	struct record_value_s record_value;
-	char false = 0;
-
-	record = record_create(record_def);
-	record_value.data = strdup("relation");
-	record_value.data_size = sizeof("relation");
-	record->values[0] = record_value;
-	record_value.data = malloc(sizeof(char));
-	record_value.data_size = sizeof(char);
-	*(char *)(record_value.data) = false;
-	record->values[1] = record_value;
-	record_value.data = malloc(sizeof(unsigned));
-	record_value.data_size = sizeof(unsigned);
-	*(unsigned *)(record_value.data) = AD_INTEGER;
-	record->values[2] = record_value;
-	record_value.data = NULL;
-	record_value.data_size = 0;
-	record->values[3] = record_value;
-	record_value.data = malloc(sizeof(short));
-	record_value.data_size = sizeof(short);
-	*(short *)(record_value.data) = SYS_REL_ATTRIBUTE;
-	record->values[4] = record_value;
-
-	store_insert_in_place(SYS_REL_ATTRIBUTE, ATTR_SYS_ATTRIBUTE_RELATION, record);
-	record_free(&record);
-}
-
-static void
-init_domain_name(record_def_t record_def)
-{
-	record_t record;
-	struct record_value_s record_value;
-	char false = 0;
-
-	record = record_create(record_def);
-	record_value.data = strdup("name");
-	record_value.data_size = sizeof("name");
-	record->values[0] = record_value;
-	record_value.data = malloc(sizeof(char));
-	record_value.data_size = sizeof(char);
-	*(char *)(record_value.data) = false;
-	record->values[1] = record_value;
-	record_value.data = malloc(sizeof(unsigned));
-	record_value.data_size = sizeof(unsigned);
-	*(unsigned *)(record_value.data) = AD_VARCHAR;
-	record->values[2] = record_value;
-	record_value.data = NULL;
-	record_value.data_size = 0;
-	record->values[3] = record_value;
-	record_value.data = malloc(sizeof(short));
-	record_value.data_size = sizeof(short);
-	*(short *)(record_value.data) = SYS_REL_DOMAIN;
-	record->values[4] = record_value;
-
-	store_insert_in_place(SYS_REL_ATTRIBUTE, ATTR_SYS_DOMAIN_NAME, record);
-	record_free(&record);
+	return sys_attribute_record_def_ptr;
 }
 
 int
 attribute_init()
 {
-	relation_t rel = rel_alloc();
-	record_def_t record_def;
+	relation_t rel = rel_create(SYS_REL_ATTRIBUTE, "sys_attribute", sys_attribute_record_def());
 
-	record_def = record_def_create();
-	record_def_add_attribute(record_def, ATTR_SYS_ATTRIBUTE_NAME);
-	record_def_add_attribute(record_def, ATTR_SYS_ATTRIBUTE_NULLABLE);
-	record_def_add_attribute(record_def, ATTR_SYS_ATTRIBUTE_DOMAIN);
-	record_def_add_attribute(record_def, ATTR_SYS_ATTRIBUTE_DOMAIN_DATA);
-	record_def_add_attribute(record_def, ATTR_SYS_ATTRIBUTE_RELATION);
+	sys_attribute_create("name", AD_VARCHAR, NULL, 0, 0, ATTR_SYS_DOMAIN_NAME);
+	sys_attribute_create("nullable", AD_BOOLEAN, NULL, 0, 0, ATTR_SYS_ATTRIBUTE_NULLABLE);
+	sys_attribute_create("domain", AD_INTEGER, NULL, 0, 0, ATTR_SYS_ATTRIBUTE_DOMAIN);
+	sys_attribute_create("domain_data", AD_BLOB, NULL, 0, 1, ATTR_SYS_ATTRIBUTE_DOMAIN_DATA);
+	sys_attribute_create("relation", AD_SMALL_INTEGER, NULL, 0, 0, ATTR_SYS_ATTRIBUTE_RELATION);
 
-	rel->id = SYS_REL_ATTRIBUTE;
-	rel->name = strdup("sys_attribute");
-	rel->record_def = record_def;
+	return rel != NULL;
+}
 
-	init_attr_name(record_def);
-	init_attr_nullable(record_def);
-	init_attr_domain(record_def);
-	init_attr_domain_data(record_def);
-	init_attr_relation(record_def);
+int
+attribute_register(short rel, attribute_t attribute, unsigned *out_id)
+{
+	return attribute_create(rel, attribute->name, attribute->domain, attribute->domain_data,
+							attribute->domain_data_size, attribute->nullable, out_id);
+}
 
-	init_domain_name(record_def);
+record_t
+attribute_record_create(short rel, const char *name, unsigned domain, void *domain_data, unsigned domain_data_size,
+						char nullable)
+{
+	record_t record = record_create(sys_attribute_record_def());
 
-	return 0;
+	record->values[AR_NAME] = record_value_str(name);
+	record->values[AR_DOMAIN] = record_value_from(&domain, sizeof(unsigned));
+	record->values[AR_DOMAIN_DATA] = domain_data ? record_value_from(domain_data,
+																	 domain_data_size)
+												 : record_value_null();
+	record->values[AR_NULLABLE] = record_value_from(&nullable, sizeof(char));
+	record->values[AR_RELATION] = record_value_from(&rel, sizeof(short));
+
+	return record;
+}
+
+int
+attribute_create(short rel, const char *name, unsigned domain, void *domain_data, unsigned domain_data_size,
+				 char nullable, unsigned *out_id)
+{
+	record_t record = attribute_record_create(rel, name, domain, domain_data, domain_data_size, nullable);
+	int status = store_insert(SYS_REL_ATTRIBUTE, out_id, record);
+	record_free(&record);
+	return status;
+}
+
+static int
+sys_attribute_create(const char *name, unsigned domain, void *domain_data, unsigned domain_data_size,
+					 char nullable, unsigned sys_id)
+{
+	record_t record = attribute_record_create(SYS_REL_ATTRIBUTE, name, domain, domain_data, domain_data_size, nullable);
+	int status = store_insert_in_place(SYS_REL_ATTRIBUTE, sys_id, record);
+	record_free(&record);
+	return status;
 }

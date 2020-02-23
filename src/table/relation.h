@@ -22,7 +22,7 @@ typedef struct relation_s
 } *relation_t;
 
 relation_t
-rel_alloc();
+rel_create(short fixed_id, const char *name, record_def_t record_def);
 
 int
 rel_init();
@@ -32,9 +32,6 @@ rel_find_by_name(char *name, int case_sens);
 
 relation_t
 rel_get(short rel);
-
-relation_t
-rel_create(char *name);
 
 void
 rel_shutdown();

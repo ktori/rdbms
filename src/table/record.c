@@ -5,6 +5,9 @@
 #include "record.h"
 
 #include <malloc.h>
+#include <stdlib.h>
+#include <string.h>
+#include "lib/strdup.h"
 
 record_def_t
 record_def_create()
@@ -65,4 +68,51 @@ record_free(record_t *record)
 	free((*record)->values);
 	free(*record);
 	*record = NULL;
+}
+
+record_def_t
+record_def_create_from(short rel, attribute_t attributes, unsigned count)
+{
+	unsigned i;
+	record_def_t result = malloc(sizeof(struct record_def_s));
+
+	result->attributes = calloc(count, sizeof(unsigned));
+	result->attributes_size = count;
+	result->attributes_count = count;
+
+	for (i = 0; i < count; ++i)
+		if (attribute_register(rel, attributes + i, result->attributes + i) != EXIT_SUCCESS)
+		{
+			fprintf(stderr, "error registering attribute\n");
+			return NULL;
+		}
+
+	return result;
+}
+
+struct record_value_s
+record_value_str(const char *str)
+{
+	struct record_value_s result = {0};
+	result.data = strdup(str);
+	result.data_size = strlen(str) + 1;
+	return result;
+}
+
+struct record_value_s
+record_value_from(void *data, size_t size)
+{
+	struct record_value_s result = {0};
+	result.data = malloc(size);
+	memcpy(result.data, data, size);
+	result.data_size = size;
+	return result;
+}
+
+struct record_value_s
+record_value_null()
+{
+	struct record_value_s result = {0};
+	result.null = 1;
+	return result;
 }
