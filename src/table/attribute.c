@@ -62,7 +62,7 @@ attribute_init()
 {
 	relation_t rel = rel_create(SYS_REL_ATTRIBUTE, "sys_attribute", sys_attribute_record_def());
 
-	sys_attribute_create("name", AD_VARCHAR, NULL, 0, 0, ATTR_SYS_DOMAIN_NAME);
+	sys_attribute_create("name", AD_VARCHAR, NULL, 0, 0, ATTR_SYS_ATTRIBUTE_NAME);
 	sys_attribute_create("nullable", AD_BOOLEAN, NULL, 0, 0, ATTR_SYS_ATTRIBUTE_NULLABLE);
 	sys_attribute_create("domain", AD_INTEGER, NULL, 0, 0, ATTR_SYS_ATTRIBUTE_DOMAIN);
 	sys_attribute_create("domain_data", AD_BLOB, NULL, 0, 1, ATTR_SYS_ATTRIBUTE_DOMAIN_DATA);

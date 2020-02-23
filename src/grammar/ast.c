@@ -278,8 +278,6 @@ ast_add_column_def(ast_column_defs_node_t defs, ast_column_def_node_t def)
 		defs->size = 4;
 		defs->count = 0;
 		defs->array = malloc(defs->size * sizeof(ast_column_def_node_t));
-		defs->array[0] = def;
-		return defs;
 	}
 	else
 	{

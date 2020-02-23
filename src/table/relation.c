@@ -17,7 +17,7 @@ static unsigned relations_size = 0;
 short next_user_id = 1000;
 
 relation_t
-rel_create(short fixed_id, const char *name, record_def_t record_def)
+rel_create(short id, const char *name, record_def_t record_def)
 {
 	if (relations_size == relations_count)
 	{
@@ -27,10 +27,10 @@ rel_create(short fixed_id, const char *name, record_def_t record_def)
 
 	memset(relations + relations_count, 0, sizeof(struct relation_s));
 
-	if (fixed_id < 0)
+	if (id < 0)
 		relations[relations_count].id = next_user_id++;
 	else
-		relations[relations_count].id = fixed_id;
+		relations[relations_count].id = id;
 
 	relations[relations_count].name = strdup(name);
 	relations[relations_count].record_def = record_def;
@@ -89,4 +89,10 @@ rel_shutdown()
 	}
 
 	free(relations);
+}
+
+short
+rel_alloc()
+{
+	return next_user_id++;
 }

@@ -21,8 +21,11 @@ typedef struct relation_s
 	record_def_t record_def;
 } *relation_t;
 
+short
+rel_alloc();
+
 relation_t
-rel_create(short fixed_id, const char *name, record_def_t record_def);
+rel_create(short id, const char *name, record_def_t record_def);
 
 int
 rel_init();
