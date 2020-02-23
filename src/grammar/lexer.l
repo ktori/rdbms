@@ -1,4 +1,5 @@
 %{
+#include "socket_input.h"
 #include "ast.h"
 #include "parser.h"
 %}
@@ -7,15 +8,15 @@
 %option reentrant
 %option bison-bridge
 %option noyywrap nounput noinput
-%option extra-type="unsigned *"
+%option extra-type="yy_extra_t"
 
 %x QUOTED_STRING
 
 %%
 [ \t\n]			{}
-\"			{ *yyextra = 1; yylval->string = string_create(); yymore(); BEGIN(QUOTED_STRING); }
+\"			{ yyextra->string_length = 1; yylval->string = string_create(); yymore(); BEGIN(QUOTED_STRING); }
 <QUOTED_STRING>\"	{ string_append(yylval->string, 0); BEGIN(INITIAL); return STRING; }
-<QUOTED_STRING>.	{ string_append(yylval->string, yytext[(*yyextra)++]); yymore(); }
+<QUOTED_STRING>.	{ string_append(yylval->string, yytext[yyextra->string_length++]); yymore(); }
 ";"			{ return SEMICOLON; }
 "select"		{ return SELECT; }
 "from"			{ return FROM; }

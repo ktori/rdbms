@@ -13,7 +13,6 @@ ast_callback(ast_statement_t statement, void *user)
 
 int main(void)
 {
-	unsigned c;
 	yyscan_t scanner;
 	if (yylex_init(&scanner))
 	{

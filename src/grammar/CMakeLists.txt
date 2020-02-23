@@ -14,7 +14,7 @@ add_custom_command(
 
 set(GRAMMAR_GENERATED_SOURCES lexer.c lexer.h parser.c parser.h)
 list(TRANSFORM GRAMMAR_GENERATED_SOURCES PREPEND ${CMAKE_CURRENT_BINARY_DIR}/)
-set(GRAMMAR_SOURCES ${CMAKE_CURRENT_LIST_DIR}/ast.h ${CMAKE_CURRENT_LIST_DIR}/ast.c ${GRAMMAR_GENERATED_SOURCES})
+set(GRAMMAR_SOURCES ${CMAKE_CURRENT_LIST_DIR}/ast.h ${CMAKE_CURRENT_LIST_DIR}/ast.c ${CMAKE_CURRENT_LIST_DIR}/socket_input.h ${GRAMMAR_GENERATED_SOURCES})
 
 add_custom_target(grammar DEPENDS ${GRAMMAR_SOURCES})
 
@@ -29,5 +29,5 @@ foreach(S IN LISTS ${GRAMMAR_GENERATED_SOURCES})
 endforeach()
 
 add_dependencies(${PROJECT_NAME} grammar)
-target_sources(${PROJECT_NAME} PRIVATE ${GRAMMAR_SOURCES})
+target_sources(${PROJECT_NAME} PRIVATE ${GRAMMAR_SOURCES} socket_input.c)
 target_link_libraries(${PROJECT_NAME} PRIVATE fl)

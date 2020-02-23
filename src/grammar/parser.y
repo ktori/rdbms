@@ -4,6 +4,11 @@
 #define YY_TYPEDEF_YY_SCANNER_T
 typedef void* yyscan_t;
 #endif
+typedef struct yy_extra_s
+{
+    unsigned string_length;
+    int socket_fd;
+} *yy_extra_t;
 }
 
 %code {
@@ -32,8 +37,6 @@ int yyerror(yyscan_t scanner, ast_callback_t callback, void *user, char *s)
   ast_statement_t statement;
   ast_statements_t statements;
 }
-
-%initial-action { yyset_extra(0, scanner); }
 
 %token SELECT
 %token FROM

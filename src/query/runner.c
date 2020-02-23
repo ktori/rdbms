@@ -143,7 +143,6 @@ execute_select(select_ast_node_t select, FILE *sockf)
 
 	store_for_each(from_rel_id, (store_for_each_callback_t) select_for_each_callback, &select_data);
 
-	fclose(sockf);
 	return EXIT_SUCCESS;
 }
 
