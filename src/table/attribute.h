@@ -33,15 +33,20 @@ enum attribute_builtin
 
 typedef struct attribute_s
 {
+	unsigned id;
 	char *name;
 	char nullable;
 	unsigned domain;
 	void *domain_data;
 	unsigned domain_data_size;
+	unsigned index;
 } *attribute_t;
 
 int
 attribute_init();
+
+attribute_t
+attribute_resolve(short rel, const char *name);
 
 int
 attribute_register(short rel, attribute_t attribute, unsigned *out_id);
@@ -53,3 +58,6 @@ attribute_create(short rel, const char *name, unsigned domain, void *domain_data
 struct record_s *
 attribute_record_create(short rel, const char *name, unsigned domain, void *domain_data, unsigned domain_data_size,
 						char nullable);
+
+void
+attribute_free(attribute_t attr);

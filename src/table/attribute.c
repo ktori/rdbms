@@ -110,6 +110,84 @@ attribute_create(short rel, const char *name, unsigned domain, void *domain_data
 	return status;
 }
 
+struct attribute_resolve_data
+{
+	const char *name;
+	short rel;
+	attribute_t result;
+	int found;
+};
+
+static int
+attribute_resolve_callback(unsigned id, record_t record, struct attribute_resolve_data *user)
+{
+	if (*(short *)record->values[AR_RELATION].data != user->rel)
+		return 0;
+
+	if (strcmp(record->values[AR_NAME].data, user->name) == 0)
+	{
+		user->result = calloc(1, sizeof(struct attribute_s));
+		user->result->id = id;
+		user->result->name = strdup(record->values[AR_NAME].data);
+		if (record->values[AR_DOMAIN_DATA].null == 0)
+		{
+			user->result->domain_data = malloc(record->values[AR_DOMAIN_DATA].data_size);
+			memcpy(user->result->domain_data, record->values[AR_DOMAIN_DATA].data, record->values[AR_DOMAIN_DATA].data_size);
+			user->result->domain_data_size = record->values[AR_DOMAIN_DATA].data_size;
+		}
+		else
+		{
+			user->result->domain_data = NULL;
+		}
+		user->result->nullable = *(char *)record->values[AR_NULLABLE].data;
+		user->result->domain = *(unsigned *)record->values[AR_DOMAIN].data;
+		user->found = 1;
+		return 1;
+	}
+
+	return 0;
+}
+
+attribute_t
+attribute_resolve(short rel, const char *name)
+{
+	unsigned i;
+	relation_t relation;
+	struct attribute_resolve_data data = {0};
+	data.rel = rel;
+	data.name = name;
+
+	/* SELECT * FROM "sys_attribute" WHERE relation = ? AND name = ? */
+	store_for_each(SYS_REL_ATTRIBUTE, (store_for_each_callback_t) attribute_resolve_callback, &data);
+
+	if (data.result != NULL)
+	{
+		relation = rel_get(rel);
+		for (i = 0; i < relation->record_def->attributes_count; ++i)
+		{
+			if (relation->record_def->attributes[i] == data.result->id)
+			{
+				data.result->index = i;
+				break;
+			}
+		}
+		if (i == relation->record_def->attributes_count)
+		{
+			fprintf(stderr, "could not get attr index\n");
+		}
+	}
+
+	return data.result;
+}
+
+void
+attribute_free(attribute_t attr)
+{
+	free(attr->domain_data);
+	free(attr->name);
+	free(attr);
+}
+
 static int
 sys_attribute_create(const char *name, unsigned domain, void *domain_data, unsigned domain_data_size,
 					 char nullable, unsigned sys_id)

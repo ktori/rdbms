@@ -44,18 +44,61 @@ attr_find_callback(unsigned id, record_t record, struct attr_find_callback_data_
 	return 0;
 }
 
+typedef struct resolved_condition_s
+{
+	attribute_t attribute;
+	enum ast_operator operator;
+	ast_literal_t value;
+} *resolved_condition_t;
+
 struct select_for_each_callback_data_s
 {
 	unsigned *attr_ids;
 	ast_name_list_node_t list;
+	resolved_condition_t condition;
 	FILE *sockf;
 };
+
+static int
+select_filter_condition(record_t record, resolved_condition_t condition)
+{
+	if (condition == NULL || condition->attribute == NULL)
+		return 0;
+
+	if (condition->value.domain != condition->attribute->domain)
+	{
+		fprintf(stderr, "TODO: coerce type (%u -> %u)\n", condition->value.domain, condition->attribute->domain);
+		return 1;
+	}
+
+	switch (condition->attribute->domain)
+	{
+		case AD_INTEGER:
+			switch (condition->operator)
+			{
+				case AST_OP_EQ:
+					return condition->value.value.int_val == *(int *) record->values[condition->attribute->index].data
+						   ? 0 : 1;
+				default:
+					fprintf(stderr, "TODO: implement op %u for %u\n", condition->operator, condition->attribute->domain);
+					return 1;
+			}
+			break;
+		default:
+			fprintf(stderr, "TODO: implement compare for %u\n", condition->attribute->domain);
+	}
+
+	return 1;
+}
 
 static int
 select_for_each_callback(unsigned id, record_t record, struct select_for_each_callback_data_s *user)
 {
 	unsigned i, ai, j;
 	struct record_s attr_rec = {0};
+
+	if (select_filter_condition(record, user->condition))
+		return 0;
 
 	fprintf(user->sockf, "id = %u\n", id);
 
@@ -147,6 +190,18 @@ execute_select(ast_select_node_t select, FILE *sockf)
 	select_data.list = data.list;
 	select_data.attr_ids = data.out_ids;
 	select_data.sockf = sockf;
+	if (select->condition)
+	{
+		select_data.condition = calloc(1, sizeof(struct resolved_condition_s));
+		select_data.condition->value = select->condition->value;
+		select_data.condition->operator = select->condition->operator;
+		select_data.condition->attribute = attribute_resolve(from_rel_id, select->condition->column->name);
+
+		if (select_data.condition->attribute == NULL)
+		{
+			fprintf(stderr, "could not resolve attribute\n");
+		}
+	}
 
 	store_for_each(from_rel_id, (store_for_each_callback_t) select_for_each_callback, &select_data);
 
