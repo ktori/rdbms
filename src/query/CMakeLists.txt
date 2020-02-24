@@ -1,1 +1,1 @@
-target_sources(${PROJECT_NAME} PRIVATE runner.c runner.h)
+target_sources(${PROJECT_NAME} PRIVATE runner.c runner.h select.c insert.c create_table.c)

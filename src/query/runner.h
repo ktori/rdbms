@@ -7,6 +7,18 @@
 #include <stdio.h>
 
 struct ast_statement_s;
+struct ast_create_table_s;
+struct ast_insert_s;
+struct select_ast_node_s;
 
 int
 execute(struct ast_statement_s *statement, FILE *sockf);
+
+int
+execute_create_table(struct ast_create_table_s *ast, FILE *sockf);
+
+int
+execute_insert(struct ast_insert_s *insert, FILE *sockf);
+
+int
+execute_select(struct select_ast_node_s *select, FILE *sockf);
