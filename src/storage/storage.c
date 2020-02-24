@@ -78,11 +78,13 @@ int
 store_insert(short rel, unsigned *out_id, record_t record)
 {
 	rel_store_t rel_store = store.relations[store_get(rel)];
+	unsigned id = ++rel_store->last_id;
 
-	*out_id = ++rel_store->last_id;
-
-	if (store_insert_in_place(rel, *out_id, record))
+	if (store_insert_in_place(rel, id, record))
 		return 1;
+
+	if (out_id)
+		*out_id = id;
 
 	return 0;
 }

@@ -9,6 +9,7 @@
 #include <storage/storage.h>
 #include <stdio.h>
 #include "lib/strdup.h"
+#include "domain_enum.h"
 
 static relation_t relations = NULL;
 static unsigned relations_count = 0;
@@ -16,9 +17,27 @@ static unsigned relations_size = 0;
 
 short next_user_id = 1000;
 
+static record_def_t rel_record_def_ptr = NULL;
+
+record_def_t
+static rel_record_def()
+{
+	if (rel_record_def_ptr != NULL)
+		return rel_record_def_ptr;
+
+	rel_record_def_ptr = record_def_create();
+
+	record_def_add_attribute(rel_record_def_ptr, ATTR_SYS_RELATION_ID);
+	record_def_add_attribute(rel_record_def_ptr, ATTR_SYS_RELATION_NAME);
+
+	return rel_record_def_ptr;
+}
+
 relation_t
 rel_create(short id, const char *name, record_def_t record_def)
 {
+	record_t record = record_create(rel_record_def());
+
 	if (relations_size == relations_count)
 	{
 		relations_size *= 2;
@@ -34,8 +53,12 @@ rel_create(short id, const char *name, record_def_t record_def)
 
 	relations[relations_count].name = strdup(name);
 	relations[relations_count].record_def = record_def;
-
 	relations_count += 1;
+
+	record->values[0] = record_value_from(&id, sizeof(short));
+	record->values[1] = record_value_str(name);
+
+	store_insert(SYS_REL_RELATION, NULL, record);
 	return relations + relations_count - 1;
 }
 
@@ -59,6 +82,7 @@ rel_init()
 	relations_size = 8;
 	relations_count = 0;
 	relations = calloc(relations_size, sizeof(struct relation_s));
+	rel_create(SYS_REL_RELATION, "sys_relation", rel_record_def());
 
 	return EXIT_SUCCESS;
 }

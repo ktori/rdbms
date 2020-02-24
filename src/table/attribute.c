@@ -68,6 +68,11 @@ attribute_init()
 	sys_attribute_create("domain_data", AD_BLOB, NULL, 0, 1, ATTR_SYS_ATTRIBUTE_DOMAIN_DATA);
 	sys_attribute_create("relation", AD_SMALL_INTEGER, NULL, 0, 0, ATTR_SYS_ATTRIBUTE_RELATION);
 
+	store_insert_in_place(SYS_REL_ATTRIBUTE, ATTR_SYS_RELATION_ID,
+						  attribute_record_create(SYS_REL_RELATION, "id", AD_SMALL_INTEGER, NULL, 0, 0));
+	store_insert_in_place(SYS_REL_ATTRIBUTE, ATTR_SYS_RELATION_NAME,
+						  attribute_record_create(SYS_REL_RELATION, "name", AD_VARCHAR, NULL, 0, 0));
+
 	return rel != NULL;
 }
 
