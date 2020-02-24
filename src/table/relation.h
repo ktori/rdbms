@@ -11,8 +11,17 @@ enum sys_relation
 {
 	SYS_REL_DOMAIN = 1,
 	SYS_REL_ATTRIBUTE,
-	SYS_REL_RELATION
+	SYS_REL_RELATION,
+	SYS_REL_CONSTRAINT
 };
+
+/*
+ *	CREATE TABLE sys_relation
+ *	(
+ *		id		SMALLINT NOT NULL PRIMARY KEY,
+ *		name	VARCHAR NOT NULL
+ *	);
+ */
 
 typedef struct relation_s
 {

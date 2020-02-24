@@ -23,11 +23,11 @@ enum attribute_builtin
 /*
  * 	CREATE TABLE "sys_attribute"
  * 	(
- * 		"name" VARCHAR NOT NULL,
- * 		"nullable" BOOLEAN NOT NULL,
- * 		"domain" INTEGER NOT NULL REFERENCES "sys_domain"("id")
- * 		"domain_data" BLOB,
- * 		"relation" SMALLINT NOT NULL
+ * 		"name" 			VARCHAR NOT NULL,
+ * 		"nullable" 		BOOLEAN NOT NULL,
+ * 		"domain" 		INTEGER NOT NULL REFERENCES "sys_domain"("id"),
+ * 		"domain_data" 	BLOB,
+ * 		"relation" 		SMALLINT NOT NULL REFERENCES "sys_relation"("id")
  * 	);
  */
 

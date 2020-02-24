@@ -8,4 +8,6 @@ target_sources(${PROJECT_NAME} PRIVATE
         record.c
         record.h
         domain_enum.h
+        constraint.c
+        constraint.h
         )

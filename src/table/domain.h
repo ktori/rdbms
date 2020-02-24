@@ -9,5 +9,12 @@ struct domain_s
 	char *name;
 };
 
+/*
+ *	CREATE TABLE sys_domain
+ *	(
+ *		id		SMALLINT NOT NULL,
+ *		name	VARCHAR NOT NULL
+ *	);
+ */
 int
 domain_init();

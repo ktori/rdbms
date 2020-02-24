@@ -46,10 +46,14 @@ record_def_free(record_def_t *record_def)
 record_t
 record_create(record_def_t def)
 {
+	unsigned i;
 	record_t result = malloc(sizeof(struct record_s));
 
 	result->def = def;
 	result->values = calloc(def->attributes_count, sizeof(struct record_value_s));
+
+	for (i = 0; i < def->attributes_count; ++i)
+		result->values[i].null = 1;
 
 	return result;
 }
