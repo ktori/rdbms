@@ -45,6 +45,7 @@ int yyerror(yyscan_t scanner, ast_callback_t callback, void *user, char *s)
   ast_column_defs_node_t column_defs;
   ast_create_table_node_t create_table;
   ast_insert_tuple_node_t insert_tuple;
+  ast_condition_t condition;
 }
 
 %token <operator> OPERATOR
@@ -52,7 +53,7 @@ int yyerror(yyscan_t scanner, ast_callback_t callback, void *user, char *s)
 %token FROM
 %token BR_OPEN BR_CLOSE
 %token COMMA
-%token ID
+%token <name> ID
 %token EOL
 %token SEMICOLON
 %token STRING
@@ -102,6 +103,8 @@ int yyerror(yyscan_t scanner, ast_callback_t callback, void *user, char *s)
 %type <insert_tuple> insert_tuple
 %type <insert_tuple> value_list
 %type <statement> insert_stmt
+%type <condition> opt_where
+%type <condition> condition
 
 %destructor { ast_name_free($<name>$); }    ID
 %destructor { ast_name_free($$); }          <name>
@@ -109,7 +112,6 @@ int yyerror(yyscan_t scanner, ast_callback_t callback, void *user, char *s)
 %destructor { ast_from_free($$); }          <from>
 %destructor { ast_select_free($$); }        <select>
 %destructor { ast_statement_free($$); }     <statement>
-%destructor { ast_statements_free($$); }    <statements>
 %destructor { ast_create_table_free($$); }  <create_table>
 %destructor { ast_column_defs_free($$); }   <column_defs>
 %destructor { ast_column_def_free($$); }    <column_def>
@@ -127,16 +129,16 @@ statement
   ;
 
 select_stmt
-  : SELECT select_items FROM from_item WHERE condition      { $$ = ast_select($2, $4); };
+  : SELECT select_items FROM from_item opt_where  { $$ = ast_select($2, $4, $5); };
   ;
 
 opt_where
-  : /* none */
-  | WHERE condition       {}
+  : /* none */                  { $$ = NULL; };
+  | WHERE condition             { $$ = $2; };
   ;
 
 condition
-  : name operator value
+  : name operator value         { $$ = ast_condition($1, $2, $3); }
   ;
 
 operator: OPERATOR      { $$ = $1; };
@@ -199,7 +201,7 @@ opt_nullable
   ;
 
 name
-  : ID            { $$ = yylval.name; };
+  : ID            { $$ = $1; };
   | STRING        { $$ = ast_name_from_string(yylval.string); };
 
 select_item
