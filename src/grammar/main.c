@@ -4,11 +4,11 @@
 
 #include "parser.h"
 #include "lexer.h"
+#include "ast/statement.h"
 
 static void
 ast_callback(ast_statement_node_t statement, void *user)
 {
-	ast_print(statement);
 }
 
 int main(void)

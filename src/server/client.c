@@ -5,13 +5,13 @@
 #include "client.h"
 #include "parser.h"
 #include "lexer.h"
-#include "../grammar/ast.h"
+#include "ast/ast.h"
 #include "../query/runner.h"
+#include "ast/statement.h"
 
 static void
 parse_callback(ast_statement_node_t statement, FILE *sockf)
 {
-	ast_print(statement);
 	execute(statement, sockf);
 }
 
@@ -34,7 +34,7 @@ client_accept(int fd)
 	}
 	c.socket_fd = fd;
 	yyset_extra(&c, scanner);
-	if (yyparse(scanner, (ast_callback_t) parse_callback, f) != EXIT_SUCCESS)
+	if (yyparse(scanner, (void (*)(ast_statement_node_t, void *)) parse_callback, f) != EXIT_SUCCESS)
 	{
 		fprintf(stderr, "parse error\n");
 	}

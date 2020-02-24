@@ -3,9 +3,14 @@
 */
 
 #include "runner.h"
+#include "ast/select.h"
+#include "ast/statement.h"
+#include "ast/insert.h"
+#include "ast/create_table.h"
+#include "ast/shared.h"
 
 #include <stdlib.h>
-#include <ast.h>
+#include <ast/ast.h>
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
@@ -16,7 +21,7 @@
 struct attr_find_callback_data_s
 {
 	unsigned *out_ids;
-	struct name_list_ast_node_s *list;
+	ast_name_list_node_t list;
 	short from_rel;
 };
 
@@ -43,7 +48,7 @@ attr_find_callback(unsigned id, record_t record, struct attr_find_callback_data_
 struct select_for_each_callback_data_s
 {
 	unsigned *attr_ids;
-	struct name_list_ast_node_s *list;
+	ast_name_list_node_t list;
 	FILE *sockf;
 };
 
