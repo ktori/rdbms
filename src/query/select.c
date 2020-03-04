@@ -17,31 +17,122 @@
 #include "ast/create_table.h"
 #include "ast/shared.h"
 
+typedef struct select_attr_array_s
+{
+	unsigned *attr_ids;
+	size_t count;
+	size_t size;
+} select_attr_array_t, *select_attr_array_pt;
+
+static void
+select_attr_push(select_attr_array_pt array, unsigned attr)
+{
+	if (array->count == array->size)
+	{
+		array->size *= 2;
+		array->attr_ids = realloc(array->attr_ids, array->size * sizeof(unsigned));
+	}
+
+	array->attr_ids[array->count] = attr;
+	array->count += 1;
+}
+
 struct attr_find_callback_data_s
 {
-	unsigned *out_ids;
-	ast_name_list_node_t list;
+	select_attr_array_t attrs;
+	ast_select_value_list_t list;
 	short from_rel;
 };
 
-static int
-attr_find_callback(unsigned id, record_t record, struct attr_find_callback_data_s *user)
+typedef struct resolve_attribute_callback_data_s
 {
-	unsigned i;
+	const char *name;
+	short rel;
+	unsigned found;
+} *resolve_attribute_callback_data_t;
 
-	if (*(short *) record->values[4].data != user->from_rel)
-		return 0;
-
-	for (i = 0; i < user->list->count; ++i)
+static int
+resolve_attribute_callback(unsigned id, record_t record, resolve_attribute_callback_data_t data)
+{
+	if (*(short *) record->values[4].data == data->rel)
 	{
-
-		if (strncmp(user->list->array[i]->name, record->values[0].data, record->values[0].data_size - 1) == 0)
+		if (strncmp(record->values[0].data, data->name, record->values[0].data_size) == 0)
 		{
-			user->out_ids[i] = id;
+			data->found = id;
+			return 1;
 		}
 	}
 
 	return 0;
+}
+
+static unsigned
+resolve_attribute(const char *name, short rel)
+{
+	struct resolve_attribute_callback_data_s data = {0};
+
+	data.name = name;
+	data.rel = rel;
+
+	store_for_each(SYS_REL_ATTRIBUTE, (store_for_each_callback_t) resolve_attribute_callback, &data);
+
+	return data.found;
+}
+
+typedef struct push_asterisk_callback_data_s
+{
+	select_attr_array_pt array;
+	short rel;
+} *push_asterisk_callback_data_t;
+
+static int
+push_asterisk_callback(unsigned id, record_t record, push_asterisk_callback_data_t data)
+{
+	if (*(short *) record->values[4].data == data->rel)
+		select_attr_push(data->array, id);
+
+	return 0;
+}
+
+static select_attr_array_t
+resolve_select_attrs(ast_select_value_list_t list, short from_rel)
+{
+	struct attr_find_callback_data_s result = {0};
+	struct push_asterisk_callback_data_s asterisk_callback_data = {0};
+	ast_select_value_pt i, end;
+	unsigned found_attr;
+
+	result.list = list;
+	result.from_rel = from_rel;
+	result.attrs.count = 0;
+	result.attrs.size = 2;
+	result.attrs.attr_ids = calloc(result.attrs.size, sizeof(unsigned));
+
+	for (i = list->array, end = list->array + list->count; i != end; ++i)
+	{
+		switch (i->type)
+		{
+			case AST_SELECT_COLUMN:
+				/* find out attr id */
+				found_attr = resolve_attribute(i->data.column->name, from_rel);
+				if (found_attr == 0)
+				{
+					fprintf(stderr, "could not locate attribute %s of relation %hd", i->data.column->name, from_rel);
+					free(result.attrs.attr_ids);
+					result.attrs.attr_ids = NULL;
+					return result.attrs;
+				}
+				select_attr_push(&result.attrs, found_attr);
+				break;
+			case AST_SELECT_ASTERISK:
+				asterisk_callback_data.array = &result.attrs;
+				asterisk_callback_data.rel = from_rel;
+				store_for_each(SYS_REL_ATTRIBUTE, (store_for_each_callback_t) push_asterisk_callback, &asterisk_callback_data);
+				break;
+		}
+	}
+
+	return result.attrs;
 }
 
 typedef struct resolved_condition_s
@@ -53,8 +144,9 @@ typedef struct resolved_condition_s
 
 struct select_for_each_callback_data_s
 {
+
 	unsigned *attr_ids;
-	ast_name_list_node_t list;
+	ast_select_value_list_t list;
 	resolved_condition_t condition;
 	FILE *sockf;
 };
@@ -80,7 +172,8 @@ select_filter_condition(record_t record, resolved_condition_t condition)
 					return condition->value.value.int_val == *(int *) record->values[condition->attribute->index].data
 						   ? 0 : 1;
 				default:
-					fprintf(stderr, "TODO: implement op %u for %u\n", condition->operator, condition->attribute->domain);
+					fprintf(stderr, "TODO: implement op %u for %u\n", condition->operator,
+							condition->attribute->domain);
 					return 1;
 			}
 			break;
@@ -166,7 +259,7 @@ int
 execute_select(ast_select_node_t select, FILE *sockf)
 {
 	short from_rel_id;
-	unsigned *attr_ids = calloc(select->columns->count, sizeof(unsigned));
+	unsigned *attr_ids = calloc(select->values->count, sizeof(unsigned));
 	struct attr_find_callback_data_s data;
 	struct select_for_each_callback_data_s select_data;
 
@@ -181,11 +274,9 @@ execute_select(ast_select_node_t select, FILE *sockf)
 		return 1;
 	}
 
-	data.list = select->columns;
-	data.out_ids = attr_ids;
+	data.list = select->values;
 	data.from_rel = from_rel_id;
-
-	store_for_each(SYS_REL_ATTRIBUTE, (store_for_each_callback_t) attr_find_callback, &data);
+	data.attrs = resolve_select_attrs(select->values, from_rel_id);
 
 	select_data.list = data.list;
 	select_data.attr_ids = data.out_ids;

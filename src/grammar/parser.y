@@ -46,7 +46,12 @@ int yyerror(yyscan_t scanner, ast_callback_t callback, void *user, char *s)
   ast_create_table_node_t create_table;
   ast_insert_tuple_node_t insert_tuple;
   ast_condition_t condition;
+
+  ast_select_value_t select_item;
+  ast_select_value_list_t select_list;
 }
+
+%token T_ASTERISK
 
 %token <operator> OPERATOR
 %token SELECT
@@ -88,11 +93,12 @@ int yyerror(yyscan_t scanner, ast_callback_t callback, void *user, char *s)
 %type <name> name
 %type <statement> statement
 %type <select> select_stmt
-%type <list> select_items
-%type <name> select_item
+%type <select_list> select_items
+%type <select_item> select_item
 %type <from> from_item
 %type <domain> column_type
 
+%type <list> insert_columns
 %type <column_def> column_def
 %type <column_defs> column_defs
 %type <column_defs> table_def
@@ -148,7 +154,7 @@ create_stmt
   ;
 
 insert_stmt
-    : INSERT INTO name select_items VALUES insert_tuple     { $$ = ast_statement_insert($3, $4, $6); };
+    : INSERT INTO name insert_columns VALUES insert_tuple     { $$ = ast_statement_insert($3, $4, $6); };
     ;
 
 insert_tuple
@@ -198,20 +204,26 @@ column_type
 opt_nullable
   :                   { $$ = 1; };
   | NOT NULL_T        { $$ = 0; };
-  ;
 
 name
   : ID            { $$ = $1; };
   | STRING        { $$ = ast_name_from_string(yylval.string); };
 
 select_item
-  : name          { $$ = $1; };
+  : name          { $$ = ast_select_value_column($1); };
+  | T_ASTERISK    { $$ = ast_select_value_asterisk(); };
 
 from_item
   : name          { $$ = ast_from($1); };
 
+insert_columns
+  : BR_OPEN insert_columns BR_CLOSE { $$ = $2; };
+  | name                            { $$ = ast_name_list_add(NULL, $1); };
+  | insert_columns COMMA name       { $$ = ast_name_list_add($1, $3); };
+
 select_items
-  : BR_OPEN select_items BR_CLOSE  { $$ = $2; };
-  | select_item        { $$ = ast_name_list_add(NULL, $1); };
-  | select_items COMMA select_item  { $$ = ast_name_list_add($1, $3); };
+  : BR_OPEN select_items BR_CLOSE   { $$ = $2; };
+  | select_item                     { $$ = ast_select_value_list_add(NULL, $1); };
+  | select_items COMMA select_item  { $$ = ast_select_value_list_add($1, $3); };
+
 %%

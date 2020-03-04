@@ -59,6 +59,7 @@ NULL { return NULL_T; }
 
 "-"?[1-9][0-9]*      { yylval->intval = atoi(yytext); return INT_VALUE; }
 
+"*"         { return T_ASTERISK; }
 ";"         { return SEMICOLON; }
 [a-z_0-9]+  { yylval->name = ast_name(yytext); return ID; }
 "("         { return BR_OPEN; }

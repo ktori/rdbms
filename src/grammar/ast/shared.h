@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <stddef.h>
 #include <table/domain_enum.h>
 
 typedef struct string_s
