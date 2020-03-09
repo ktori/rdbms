@@ -46,6 +46,8 @@ REAL            { return REAL; }
 TRUE            { return TRUE; }
 FALSE           { return FALSE; }
 
+"."             { return T_DOT; }
+
 NOT  { return NOT; }
 NULL { return NULL_T; }
 

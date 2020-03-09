@@ -28,32 +28,8 @@ int yyerror(yyscan_t scanner, ast_callback_t callback, void *user, char *s)
 %parse-param { ast_callback_t callback }
 %parse-param { void *user }
 
-%union
-{
-  int intval;
-  float fval;
-  enum ast_operator operator;
-  ast_literal_t literal;
-  string_t string;
-  ast_name_node_t name;
-  ast_name_list_node_t list;
-  ast_from_node_t from;
-  ast_select_node_t select;
-  ast_statement_node_t statement;
-  enum attribute_domain domain;
-  ast_column_def_node_t column_def;
-  ast_column_defs_node_t column_defs;
-  ast_create_table_node_t create_table;
-  ast_insert_tuple_node_t insert_tuple;
-  ast_condition_t condition;
-
-  ast_select_value_t select_item;
-  ast_select_value_list_t select_list;
-
-  enum ast_join_type_enum join_type;
-}
-
 %token T_ASTERISK
+%token T_DOT
 
 %token <operator> OPERATOR
 %token SELECT
@@ -124,6 +100,8 @@ int yyerror(yyscan_t scanner, ast_callback_t callback, void *user, char *s)
 %type <condition> opt_where
 %type <condition> condition
 
+%type <select_item> select_expression
+
 %type <join_type> join_type
 
 %destructor { ast_name_free($<name>$); }    ID
@@ -138,43 +116,56 @@ int yyerror(yyscan_t scanner, ast_callback_t callback, void *user, char *s)
 
 %%
 statements
-  : statement SEMICOLON             { callback($1, user); };
-  | statements statement SEMICOLON  { callback($2, user); };
+  : statement SEMICOLON             { callback($1, user); }
+  | statements statement SEMICOLON  { callback($2, user); }
   ;
 
 statement
-  : select_stmt                 { $$ = ast_statement_select($1); };
-  | create_stmt                 { $$ = $1; };
-  | insert_stmt                 { $$ = $1; };
+  : select_stmt                 { $$ = ast_statement_select($1); }
+  | create_stmt                 { $$ = $1; }
+  | insert_stmt                 { $$ = $1; }
+  ;
+
+/* common */
+
+name
+  : ID            { $$ = $1; }
+  | STRING        { $$ = ast_name_from_string(yylval.string); }
   ;
 
 /* SELECT statement */
 
 select_stmt
-  : SELECT select_items FROM from_item opt_where  { $$ = ast_select($2, $4, $5); };
+  : SELECT select_items FROM from_item opt_where  { $$ = ast_select($2, $4, $5); }
   ;
 
 opt_where
-  : /* none */                  { $$ = NULL; };
-  | WHERE condition             { $$ = $2; };
+  : /* none */                  { $$ = NULL; }
+  | WHERE condition             { $$ = $2; }
   ;
 
 select_items
-  : BR_OPEN select_items BR_CLOSE   { $$ = $2; };
-  | select_item                     { $$ = ast_select_value_list_add(NULL, $1); };
-  | select_items COMMA select_item  { $$ = ast_select_value_list_add($1, $3); };
+  : BR_OPEN select_items BR_CLOSE   { $$ = $2; }
+  | select_item                     { $$ = ast_select_value_list_add(NULL, $1); }
+  | select_items COMMA select_item  { $$ = ast_select_value_list_add($1, $3); }
+  ;
 
 join: join_type JOIN name ON condition
 
 join_type
-  : /* none */  { $$ = AST_JOIN_INNER; };
-  | LEFT        { $$ = AST_JOIN_LEFT; };
-  | RIGHT       { $$ = AST_JOIN_RIGHT; };
-  | FULL OUTER  { $$ = AST_JOIN_FULL; };
-  | INNER       { $$ = AST_JOIN_INNER; };
+  : /* none */  { $$ = AST_JOIN_INNER; }
+  | LEFT        { $$ = AST_JOIN_LEFT; }
+  | RIGHT       { $$ = AST_JOIN_RIGHT; }
+  | FULL OUTER  { $$ = AST_JOIN_FULL; }
+  | INNER       { $$ = AST_JOIN_INNER; }
+  ;
+
+select_expression
+  : select_item         { $$ = $1; }
+  | select_item AS name { $$ = $1; };
 
 select_item
-  : name          { $$ = ast_select_value_column($1); };
+  : name          { $$ = ast_select_value_column($1); }
   | T_ASTERISK    { $$ = ast_select_value_asterisk(); };
 
 from_item
@@ -203,17 +194,17 @@ insert_tuple
     ;
 
 value_list
-    : value                     { $$ = ast_insert_tuple_add(NULL, $1); };
-    | value_list COMMA value    { $$ = ast_insert_tuple_add($1, $3); };
+    : value                     { $$ = ast_insert_tuple_add(NULL, $1); }
+    | value_list COMMA value    { $$ = ast_insert_tuple_add($1, $3); }
     ;
 
 value
-    : NULL_T        { $$ = ast_literal_null(); };
-    | TRUE          { $$ = ast_literal_bool(1); };
-    | FALSE         { $$ = ast_literal_bool(0); };
-    | STRING_VALUE  { $$ = ast_literal_string(yylval.string); };
-    | INT_VALUE     { $$ = ast_literal_int(yylval.intval); };
-    | FLOAT_VALUE   { $$ = ast_literal_real(yylval.fval); };
+    : NULL_T        { $$ = ast_literal_null(); }
+    | TRUE          { $$ = ast_literal_bool(1); }
+    | FALSE         { $$ = ast_literal_bool(0); }
+    | STRING_VALUE  { $$ = ast_literal_string(yylval.string); }
+    | INT_VALUE     { $$ = ast_literal_int(yylval.intval); }
+    | FLOAT_VALUE   { $$ = ast_literal_real(yylval.fval); }
     ;
 
 create_table_stmt
@@ -232,27 +223,23 @@ column_def
   ;
 
 column_type
-  : BLOB              { $$ = AD_BLOB; };
-  | BOOLEAN           { $$ = AD_BOOLEAN; };
-  | CHAR              { $$ = AD_CHAR; };
-  | VARCHAR           { $$ = AD_VARCHAR; };
-  | BYTE              { $$ = AD_BYTE; };
-  | SMALLINT          { $$ = AD_SMALL_INTEGER; };
-  | INTEGER           { $$ = AD_INTEGER; };
-  | REAL              { $$ = AD_REAL; };
+  : BLOB              { $$ = AD_BLOB; }
+  | BOOLEAN           { $$ = AD_BOOLEAN; }
+  | CHAR              { $$ = AD_CHAR; }
+  | VARCHAR           { $$ = AD_VARCHAR; }
+  | BYTE              { $$ = AD_BYTE; }
+  | SMALLINT          { $$ = AD_SMALL_INTEGER; }
+  | INTEGER           { $$ = AD_INTEGER; }
+  | REAL              { $$ = AD_REAL; }
   ;
 
 opt_nullable
-  :                   { $$ = 1; };
+  :                   { $$ = 1; }
   | NOT NULL_T        { $$ = 0; };
 
-name
-  : ID            { $$ = $1; };
-  | STRING        { $$ = ast_name_from_string(yylval.string); };
-
 insert_columns
-  : BR_OPEN insert_columns BR_CLOSE { $$ = $2; };
-  | name                            { $$ = ast_name_list_add(NULL, $1); };
+  : BR_OPEN insert_columns BR_CLOSE { $$ = $2; }
+  | name                            { $$ = ast_name_list_add(NULL, $1); }
   | insert_columns COMMA name       { $$ = ast_name_list_add($1, $3); };
 
 %%

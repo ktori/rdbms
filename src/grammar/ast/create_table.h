@@ -5,7 +5,7 @@
 #pragma once
 
 #include <table/domain_enum.h>
-#include "ast.h"
+
 #include "statement.h"
 #include "shared.h"
 

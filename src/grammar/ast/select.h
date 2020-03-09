@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "ast.h"
+#include "literal.h"
 #include "statement.h"
 #include "shared.h"
 

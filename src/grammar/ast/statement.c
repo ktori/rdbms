@@ -5,6 +5,7 @@
 #include <mhash.h>
 #include "statement.h"
 #include "create_table.h"
+#include "select.h"
 
 void
 ast_statement_free(ast_statement_node_t node)

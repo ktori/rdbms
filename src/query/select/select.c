@@ -6,15 +6,10 @@
 #include <ast/ast.h>
 #include <stdio.h>
 #include <string.h>
-#include <unistd.h>
 #include <table/relation.h>
 #include <storage/storage.h>
 #include <table/record.h>
-#include "query/runner.h"
 #include "ast/select.h"
-#include "ast/statement.h"
-#include "ast/insert.h"
-#include "ast/create_table.h"
 #include "ast/shared.h"
 
 typedef struct select_attr_array_s

@@ -6,6 +6,7 @@ set(AST_SOURCES
         literal.c literal.h
         create_table.h create_table.c
         shared.c shared.h
+        yystype.h
         )
 
 list(TRANSFORM AST_SOURCES PREPEND ${CMAKE_CURRENT_LIST_DIR}/)

@@ -6,3 +6,4 @@
 #include "ast/create_table.h"
 #include "ast/insert.h"
 #include "ast/select.h"
+#include "ast/yystype.h"
