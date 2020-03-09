@@ -15,6 +15,16 @@
 
 %%
 
+INNER           { return INNER; }
+LEFT            { return LEFT; }
+RIGHT           { return RIGHT; }
+FULL            { return FULL; }
+OUTER           { return OUTER; }
+JOIN            { return JOIN; }
+ON              { return ON; }
+
+AS              { return AS; }
+
 SELECT          { return SELECT; }
 FROM            { return FROM; }
 CREATE          { return CREATE; }

@@ -114,6 +114,7 @@ ast_select_value_list_add(ast_select_value_list_t list, ast_select_value_t value
 	}
 
 	memcpy(list->array + list->count, &value, sizeof(value));
+	list->count += 1;
 
 	return list;
 }

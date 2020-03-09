@@ -8,6 +8,14 @@
 #include "statement.h"
 #include "shared.h"
 
+enum ast_join_type_enum {
+	AST_JOIN_UNKNOWN,
+	AST_JOIN_INNER,
+	AST_JOIN_LEFT,
+	AST_JOIN_RIGHT,
+	AST_JOIN_FULL
+};
+
 typedef struct ast_condition_s
 {
 	ast_name_node_t column;
@@ -44,6 +52,10 @@ ast_select_value_asterisk();
 
 void
 ast_select_value_free(ast_select_value_pt value);
+
+typedef struct ast_select_join_s {
+	enum ast_join_type_enum type;
+} *ast_select_join_t;
 
 typedef struct ast_select_value_list_s {
 	ast_select_value_pt array;

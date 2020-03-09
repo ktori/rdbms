@@ -10,7 +10,7 @@
 #include <table/relation.h>
 #include <storage/storage.h>
 #include <table/record.h>
-#include "runner.h"
+#include "query/runner.h"
 #include "ast/select.h"
 #include "ast/statement.h"
 #include "ast/insert.h"
@@ -145,7 +145,7 @@ typedef struct resolved_condition_s
 struct select_for_each_callback_data_s
 {
 
-	unsigned *attr_ids;
+	select_attr_array_t attrs;
 	ast_select_value_list_t list;
 	resolved_condition_t condition;
 	FILE *sockf;
@@ -195,12 +195,12 @@ select_for_each_callback(unsigned id, record_t record, struct select_for_each_ca
 
 	fprintf(user->sockf, "id = %u\n", id);
 
-	for (i = 0; i < user->list->count; ++i)
+	for (i = 0; i < user->attrs.count; ++i)
 	{
-		fprintf(user->sockf, "%s: ", user->list->array[i]->name);
+		fprintf(user->sockf, "column (%d): ", i);
 		for (ai = 0; ai < record->def->attributes_count; ++ai)
 		{
-			if (record->def->attributes[ai] == user->attr_ids[i])
+			if (record->def->attributes[ai] == user->attrs.attr_ids[i])
 				break;
 		}
 		if (ai == record->def->attributes_count)
@@ -258,6 +258,14 @@ select_for_each_callback(unsigned id, record_t record, struct select_for_each_ca
 int
 execute_select(ast_select_node_t select, FILE *sockf)
 {
+	/*
+	 * 	Executing SELECT:
+	 * 		* Build a temporary table (create record_def)
+	 * 		* Populate temporary table
+	 * 		* Filter temporary table
+	 * 		* Return rows
+	 */
+
 	short from_rel_id;
 	unsigned *attr_ids = calloc(select->values->count, sizeof(unsigned));
 	struct attr_find_callback_data_s data;
@@ -279,7 +287,7 @@ execute_select(ast_select_node_t select, FILE *sockf)
 	data.attrs = resolve_select_attrs(select->values, from_rel_id);
 
 	select_data.list = data.list;
-	select_data.attr_ids = data.out_ids;
+	select_data.attrs = data.attrs;
 	select_data.sockf = sockf;
 	if (select->condition)
 	{

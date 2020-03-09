@@ -49,6 +49,8 @@ int yyerror(yyscan_t scanner, ast_callback_t callback, void *user, char *s)
 
   ast_select_value_t select_item;
   ast_select_value_list_t select_list;
+
+  enum ast_join_type_enum join_type;
 }
 
 %token T_ASTERISK
@@ -65,6 +67,16 @@ int yyerror(yyscan_t scanner, ast_callback_t callback, void *user, char *s)
 %token STRING_VALUE
 %token <intval> INT_VALUE
 %token <fval> FLOAT_VALUE
+
+%token AS
+
+%token INNER
+%token LEFT
+%token RIGHT
+%token FULL
+%token OUTER
+%token JOIN
+%token ON
 
 %token CREATE
 %token TABLE
@@ -112,6 +124,8 @@ int yyerror(yyscan_t scanner, ast_callback_t callback, void *user, char *s)
 %type <condition> opt_where
 %type <condition> condition
 
+%type <join_type> join_type
+
 %destructor { ast_name_free($<name>$); }    ID
 %destructor { ast_name_free($$); }          <name>
 %destructor { ast_name_list_free($$); }     <list>
@@ -134,6 +148,8 @@ statement
   | insert_stmt                 { $$ = $1; };
   ;
 
+/* SELECT statement */
+
 select_stmt
   : SELECT select_items FROM from_item opt_where  { $$ = ast_select($2, $4, $5); };
   ;
@@ -143,11 +159,36 @@ opt_where
   | WHERE condition             { $$ = $2; };
   ;
 
+select_items
+  : BR_OPEN select_items BR_CLOSE   { $$ = $2; };
+  | select_item                     { $$ = ast_select_value_list_add(NULL, $1); };
+  | select_items COMMA select_item  { $$ = ast_select_value_list_add($1, $3); };
+
+join: join_type JOIN name ON condition
+
+join_type
+  : /* none */  { $$ = AST_JOIN_INNER; };
+  | LEFT        { $$ = AST_JOIN_LEFT; };
+  | RIGHT       { $$ = AST_JOIN_RIGHT; };
+  | FULL OUTER  { $$ = AST_JOIN_FULL; };
+  | INNER       { $$ = AST_JOIN_INNER; };
+
+select_item
+  : name          { $$ = ast_select_value_column($1); };
+  | T_ASTERISK    { $$ = ast_select_value_asterisk(); };
+
+from_item
+  : name          { $$ = ast_from($1); };
+
+/* INSERT statement */
+
 condition
   : name operator value         { $$ = ast_condition($1, $2, $3); }
   ;
 
 operator: OPERATOR      { $$ = $1; };
+
+/* CREATE statement */
 
 create_stmt
   : create_table_stmt   { $$ = ast_statement_create_table($1); };
@@ -209,21 +250,9 @@ name
   : ID            { $$ = $1; };
   | STRING        { $$ = ast_name_from_string(yylval.string); };
 
-select_item
-  : name          { $$ = ast_select_value_column($1); };
-  | T_ASTERISK    { $$ = ast_select_value_asterisk(); };
-
-from_item
-  : name          { $$ = ast_from($1); };
-
 insert_columns
   : BR_OPEN insert_columns BR_CLOSE { $$ = $2; };
   | name                            { $$ = ast_name_list_add(NULL, $1); };
   | insert_columns COMMA name       { $$ = ast_name_list_add($1, $3); };
-
-select_items
-  : BR_OPEN select_items BR_CLOSE   { $$ = $2; };
-  | select_item                     { $$ = ast_select_value_list_add(NULL, $1); };
-  | select_items COMMA select_item  { $$ = ast_select_value_list_add($1, $3); };
 
 %%

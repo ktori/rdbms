@@ -6,6 +6,7 @@
 #include "ast/statement.h"
 #include "ast/insert.h"
 #include "ast/shared.h"
+#include "query/select/select.h"
 
 #include <stdlib.h>
 #include <ast/ast.h>
