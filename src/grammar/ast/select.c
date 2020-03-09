@@ -9,10 +9,11 @@
 #include "ast.h"
 
 ast_from_expression_t
-ast_from(ast_table_name_t table)
+ast_from(ast_table_name_t table, ast_name_node_t alias)
 {
 	ast_from_expression_t result = {0};
 	result.table = table;
+	result.alias = alias;
 	return result;
 }
 
@@ -95,6 +96,9 @@ ast_select_value_free(ast_select_value_pt value)
 	if (value->type == AST_SELECT_COLUMN)
 		ast_column_name_free(&value->data.column);
 
+	if (value->alias)
+		ast_name_free(value->alias);
+
 	memset(value, 0, sizeof(*value));
 }
 
@@ -153,13 +157,14 @@ ast_from_join(ast_from_expression_pt from, ast_join_t join)
 }
 
 ast_join_t
-ast_join(enum ast_join_type_enum type, ast_table_name_t table, ast_condition_t condition)
+ast_join(enum ast_join_type_enum type, ast_table_name_t table, ast_condition_t condition, ast_name_node_t alias)
 {
 	ast_join_t result = calloc(1, sizeof(struct ast_join_s));
 
 	result->type = type;
 	result->table = table;
 	result->condition = condition;
+	result->alias = alias;
 
 	return result;
 }

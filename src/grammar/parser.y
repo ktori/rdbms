@@ -83,7 +83,6 @@ int yyerror(yyscan_t scanner, ast_callback_t callback, void *user, char *s)
 %type <select> select_stmt
 %type <select_list> select_items
 %type <select_item> select_item
-%type <from> from_item
 %type <domain> column_type
 
 %type <list> insert_columns
@@ -108,6 +107,8 @@ int yyerror(yyscan_t scanner, ast_callback_t callback, void *user, char *s)
 
 %type <table_name> table_name
 %type <column_name> column_name
+
+%type <name> opt_alias
 
 %destructor { ast_name_free($<name>$); }    ID
 %destructor { ast_name_free($$); }          <name>
@@ -151,9 +152,13 @@ select_stmt
   ;
 
 from_expression
-  : table_name            { $$ = ast_from($1); }
+  : table_name opt_alias  { $$ = ast_from($1, $2); }
   | from_expression join  { ast_from_join(&$1, $2); $$ = $1; }
   ;
+
+opt_alias
+  : /* none */  { $$ = NULL; }
+  | AS name     { $$ = $2; }
 
 opt_where
   : /* none */                  { $$ = NULL; }
@@ -161,12 +166,12 @@ opt_where
   ;
 
 select_items
-  : BR_OPEN select_items BR_CLOSE         { $$ = $2; }
-  | select_expression                     { $$ = ast_select_value_list_add(NULL, $1); }
-  | select_items COMMA select_expression  { $$ = ast_select_value_list_add($1, $3); }
+  : BR_OPEN select_items BR_CLOSE   { $$ = $2; }
+  | select_item                     { $$ = ast_select_value_list_add(NULL, $1); }
+  | select_items COMMA select_item  { $$ = ast_select_value_list_add($1, $3); }
   ;
 
-join: join_type JOIN table_name ON condition { $$ = ast_join($1, $3, $5); };
+join: join_type JOIN table_name opt_alias ON condition { $$ = ast_join($1, $3, $6, $4); };
 
 join_type
   : /* none */  { $$ = AST_JOIN_INNER; }
@@ -176,12 +181,8 @@ join_type
   | INNER       { $$ = AST_JOIN_INNER; }
   ;
 
-select_expression
-  : select_item         { $$ = $1; }
-  | select_item AS name { $$ = $1; };
-
 select_item
-  : column_name                 { $$ = ast_select_value_column($1); }
+  : column_name opt_alias       { $$ = ast_select_value_column($1); }
   | T_ASTERISK                  { $$ = ast_select_value_asterisk(); }
   | table_name T_DOT T_ASTERISK { $$ = ast_select_value_asterisk(); }
   ;

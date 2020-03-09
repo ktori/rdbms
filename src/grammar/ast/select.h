@@ -39,7 +39,7 @@ typedef struct ast_join_s {
 } *ast_join_t;
 
 ast_join_t
-ast_join(enum ast_join_type_enum type, ast_table_name_t table, ast_condition_t condition);
+ast_join(enum ast_join_type_enum type, ast_table_name_t table, ast_condition_t condition, ast_name_node_t alias);
 
 void
 ast_join_free(ast_join_t join);
@@ -52,7 +52,7 @@ typedef struct ast_from_expression_s {
 } ast_from_expression_t, *ast_from_expression_pt;
 
 ast_from_expression_t
-ast_from(ast_table_name_t table);
+ast_from(ast_table_name_t table, ast_name_node_t alias);
 
 void
 ast_from_join(ast_from_expression_pt from, ast_join_t join);
@@ -68,6 +68,7 @@ typedef struct ast_select_value_s {
 		AST_SELECT_COLUMN,
 		AST_SELECT_ASTERISK
 	} type;
+	ast_name_node_t alias;
 } ast_select_value_t, *ast_select_value_pt;
 
 ast_select_value_t
