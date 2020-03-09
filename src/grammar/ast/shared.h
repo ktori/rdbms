@@ -53,3 +53,28 @@ ast_name_free(ast_name_node_t node);
 
 void
 ast_name_list_free(ast_name_list_node_t node);
+
+/* table name */
+
+typedef struct ast_table_name_s {
+	char *name;
+} ast_table_name_t, *ast_table_name_pt;
+
+ast_table_name_t
+ast_table_name(char *table);
+
+void
+ast_table_name_free(ast_table_name_pt table_name);
+
+/* column name */
+
+typedef struct ast_column_name_s {
+	ast_table_name_t table;
+	char *name;
+} ast_column_name_t, *ast_column_name_pt;
+
+ast_column_name_t
+ast_column_name(ast_table_name_t table, char *column);
+
+void
+ast_column_name_free(ast_column_name_pt column_name);

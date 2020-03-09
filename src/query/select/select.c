@@ -109,10 +109,10 @@ resolve_select_attrs(ast_select_value_list_t list, short from_rel)
 		{
 			case AST_SELECT_COLUMN:
 				/* find out attr id */
-				found_attr = resolve_attribute(i->data.column->name, from_rel);
+				found_attr = resolve_attribute(i->data.column.name, from_rel);
 				if (found_attr == 0)
 				{
-					fprintf(stderr, "could not locate attribute %s of relation %hd", i->data.column->name, from_rel);
+					fprintf(stderr, "could not locate attribute %s of relation %hd", i->data.column.name, from_rel);
 					free(result.attrs.attr_ids);
 					result.attrs.attr_ids = NULL;
 					return result.attrs;
@@ -268,7 +268,7 @@ execute_select(ast_select_node_t select, FILE *sockf)
 
 	fprintf(sockf, "select\n");
 
-	from_rel_id = rel_find_by_name(select->from->name->name, 0);
+	from_rel_id = rel_find_by_name(select->from.table.name, 0);
 
 	if (from_rel_id <= 0)
 	{

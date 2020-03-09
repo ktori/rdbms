@@ -8,16 +8,25 @@
 #include "shared.h"
 #include "ast.h"
 
-struct from_ast_node_s *
-ast_from(ast_name_node_t name_node)
+ast_from_expression_t
+ast_from(ast_table_name_t table)
 {
-	struct from_ast_node_s *result = calloc(1, sizeof(struct from_ast_node_s));
-	result->name = name_node;
+	ast_from_expression_t result = {0};
+	result.table = table;
 	return result;
 }
 
+void
+ast_from_free(ast_from_expression_pt node)
+{
+	ast_table_name_free(&node->table);
+
+	if (node->head)
+		ast_join_free(node->head);
+}
+
 struct select_ast_node_s *
-ast_select(ast_select_value_list_t values, struct from_ast_node_s *from, ast_condition_t condition)
+ast_select(ast_select_value_list_t values, ast_from_expression_t from, ast_condition_t condition)
 {
 	struct select_ast_node_s *result = calloc(1, sizeof(struct select_ast_node_s));
 	result->values = values;
@@ -36,17 +45,10 @@ ast_statement_select(struct select_ast_node_s *select)
 }
 
 void
-ast_from_free(ast_from_node_t node)
-{
-	ast_name_free(node->name);
-	free(node);
-}
-
-void
 ast_select_free(ast_select_node_t node)
 {
 	ast_select_value_list_free(node->values);
-	ast_from_free(node->from);
+	ast_from_free(&node->from);
 	free(node);
 }
 
@@ -71,7 +73,7 @@ ast_condition_free(ast_condition_t node)
 }
 
 ast_select_value_t
-ast_select_value_column(ast_name_node_t name)
+ast_select_value_column(ast_column_name_t name)
 {
 	ast_select_value_t result = {0};
 	result.type = AST_SELECT_COLUMN;
@@ -91,7 +93,7 @@ void
 ast_select_value_free(ast_select_value_pt value)
 {
 	if (value->type == AST_SELECT_COLUMN)
-		ast_name_free(value->data.column);
+		ast_column_name_free(&value->data.column);
 
 	memset(value, 0, sizeof(*value));
 }
@@ -129,4 +131,52 @@ ast_select_value_list_free(ast_select_value_list_t list)
 
 	free(list->array);
 	free(list);
+}
+
+void
+ast_from_join(ast_from_expression_pt from, ast_join_t join)
+{
+	if (from->tail == NULL)
+	{
+		if (from->head != NULL)
+		{
+			fprintf(stderr, "illegal state: from->head != NULL while from->tail is NULL\n");
+			return;
+		}
+
+		from->tail = join;
+		from->head = join;
+	}
+
+	from->tail->next = join;
+	from->tail = join;
+}
+
+ast_join_t
+ast_join(enum ast_join_type_enum type, ast_table_name_t table, ast_condition_t condition)
+{
+	ast_join_t result = calloc(1, sizeof(struct ast_join_s));
+
+	result->type = type;
+	result->table = table;
+	result->condition = condition;
+
+	return result;
+}
+
+void
+ast_join_free(ast_join_t join)
+{
+	ast_table_name_free(&join->table);
+
+	if (join->condition)
+		ast_condition_free(join->condition);
+
+	if (join->alias)
+		ast_name_free(join->alias);
+
+	if (join->next)
+		ast_join_free(join->next);
+
+	free(join);
 }

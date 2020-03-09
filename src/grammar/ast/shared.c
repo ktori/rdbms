@@ -98,3 +98,35 @@ ast_name_list_free(ast_name_list_node_t node)
 	free(node->array);
 	free(node);
 }
+
+ast_table_name_t
+ast_table_name(char *table)
+{
+	ast_table_name_t result = {0};
+	result.name = table;
+	return result;
+}
+
+void
+ast_table_name_free(ast_table_name_pt table_name)
+{
+	free(table_name->name);
+	table_name->name = NULL;
+}
+
+ast_column_name_t
+ast_column_name(ast_table_name_t table, char *column)
+{
+	ast_column_name_t result = {0};
+	result.table = table;
+	result.name = column;
+	return result;
+}
+
+void
+ast_column_name_free(ast_column_name_pt column_name)
+{
+	ast_table_name_free(&column_name->table);
+	free(column_name->name);
+	column_name->name = NULL;
+}
