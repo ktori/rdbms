@@ -1,10 +1,10 @@
+#include "server/server.h"
+#include <malloc.h>
+#include <signal.h>
+#include <storage/storage.h>
 #include <table/attribute.h>
 #include <table/domain.h>
 #include <table/relation.h>
-#include <storage/storage.h>
-#include <signal.h>
-#include "server/server.h"
-#include <malloc.h>
 
 struct server_s *server;
 

@@ -63,6 +63,7 @@ ast_from_free(ast_from_expression_pt node);
 typedef struct ast_select_value_s {
 	union {
 		ast_column_name_t column;
+		ast_table_name_t table;
 	} data;
 	enum {
 		AST_SELECT_COLUMN,
@@ -75,7 +76,7 @@ ast_select_value_t
 ast_select_value_column(ast_column_name_t name);
 
 ast_select_value_t
-ast_select_value_asterisk();
+ast_select_value_asterisk(ast_table_name_t name);
 
 void
 ast_select_value_free(ast_select_value_pt value);

@@ -1,9 +1,11 @@
 /*
  * Created by victoria on 22.02.20.
-*/
+ */
 
 #include "parser.h"
+
 #include "lexer.h"
+
 #include "ast/statement.h"
 
 static void
@@ -11,9 +13,10 @@ ast_callback(ast_statement_node_t statement, void *user)
 {
 }
 
-int main(void)
+int
+main(void)
 {
-	struct yy_extra_s extra = {0};
+	struct yy_extra_s extra = { 0 };
 	yyscan_t scanner;
 	if (yylex_init(&scanner))
 	{

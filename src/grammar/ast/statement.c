@@ -2,10 +2,11 @@
  * Created by victoria on 24.02.20.
 */
 
-#include <mhash.h>
 #include "statement.h"
 #include "create_table.h"
 #include "select.h"
+
+#include <malloc.h>
 
 void
 ast_statement_free(ast_statement_node_t node)

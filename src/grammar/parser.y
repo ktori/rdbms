@@ -183,8 +183,8 @@ join_type
 
 select_item
   : column_name opt_alias       { $$ = ast_select_value_column($1); }
-  | T_ASTERISK                  { $$ = ast_select_value_asterisk(); }
-  | table_name T_DOT T_ASTERISK { $$ = ast_select_value_asterisk(); }
+  | T_ASTERISK                  { $$ = ast_select_value_asterisk(ast_table_name(NULL)); }
+  | table_name T_DOT T_ASTERISK { $$ = ast_select_value_asterisk($1); }
   ;
 
 /* INSERT statement */

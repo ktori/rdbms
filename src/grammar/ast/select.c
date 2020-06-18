@@ -2,11 +2,13 @@
  * Created by victoria on 24.02.20.
 */
 
-#include <mhash.h>
 #include "select.h"
 #include "statement.h"
 #include "shared.h"
 #include "ast.h"
+
+#include <memory.h>
+#include <malloc.h>
 
 ast_from_expression_t
 ast_from(ast_table_name_t table, ast_name_node_t alias)
@@ -83,10 +85,11 @@ ast_select_value_column(ast_column_name_t name)
 }
 
 ast_select_value_t
-ast_select_value_asterisk()
+ast_select_value_asterisk(ast_table_name_t name)
 {
 	ast_select_value_t result = {0};
 	result.type = AST_SELECT_ASTERISK;
+	result.data.table = name;
 	return result;
 }
 
@@ -95,6 +98,9 @@ ast_select_value_free(ast_select_value_pt value)
 {
 	if (value->type == AST_SELECT_COLUMN)
 		ast_column_name_free(&value->data.column);
+
+	if (value->type == AST_SELECT_ASTERISK)
+		ast_table_name_free(&value->data.table);
 
 	if (value->alias)
 		ast_name_free(value->alias);
